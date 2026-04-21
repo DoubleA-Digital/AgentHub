@@ -1,0 +1,65 @@
+{
+  "integrations": {
+    "github": {
+      "status": "disconnected",
+      "label": "GitHub API",
+      "icon": "github",
+      "config": {
+        "token": "GITHUB_TOKEN_HERE",
+        "owner": "",
+        "repo": "",
+        "autoCommit": true,
+        "autoPR": true,
+        "defaultBranch": "main",
+        "commitPrefix": "chore(agent):"
+      },
+      "capabilities": ["automated commits", "pull requests", "branch management", "GitHub Actions", "changelog generation"]
+    },
+    "sendgrid": {
+      "status": "disconnected",
+      "label": "SendGrid",
+      "icon": "email",
+      "config": {
+        "apiKey": "SENDGRID_API_KEY_HERE",
+        "fromEmail": "",
+        "fromName": "Biryani Temptations",
+        "replyTo": ""
+      },
+      "capabilities": ["transactional email", "templates", "newsletters", "webhooks", "deliverability tracking"]
+    },
+    "vercel": {
+      "status": "disconnected",
+      "label": "Vercel",
+      "icon": "deploy",
+      "config": {
+        "token": "VERCEL_TOKEN_HERE",
+        "projectId": "",
+        "orgId": "",
+        "autoDeployOnPush": true,
+        "previewBranches": true
+      },
+      "capabilities": ["auto-deploy", "preview URLs", "env var management", "rollback", "analytics"]
+    },
+    "obsidian": {
+      "status": "connected",
+      "label": "Obsidian Vault",
+      "icon": "brain",
+      "config": {
+        "vaultPath": "./vault",
+        "autoSync": true,
+        "weeklyReportDay": "sunday"
+      },
+      "capabilities": ["agent memory", "idea reports", "task history", "shared context", "knowledge base"]
+    },
+    "websearch": {
+      "status": "connected",
+      "label": "Web Search",
+      "icon": "search",
+      "config": {
+        "enabledAgents": ["innovator", "reviewer"],
+        "rateLimit": "100/day"
+      },
+      "capabilities": ["market research", "competitor analysis", "tech scouting", "live data"]
+    }
+  }
+}

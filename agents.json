@@ -1,0 +1,241 @@
+{
+  "swarm": {
+    "id": "swarm-17776731009100-6m21o7",
+    "name": "Elite Dev Team",
+    "topology": "hierarchical-mesh",
+    "maxAgents": 15,
+    "activeAgents": 10,
+    "protocol": "message-bus",
+    "autoScale": true,
+    "v3Mode": false
+  },
+  "agents": [
+    {
+      "id": "architect",
+      "name": "Architect Agent",
+      "icon": "🧠",
+      "role": "The Brain",
+      "description": "Plans every project before a single line of code is written. Breaks work into tasks and delegates to the right agents.",
+      "skills": [
+        "System design",
+        "Microservices architecture",
+        "Scalability planning",
+        "API contract design",
+        "Database schema design",
+        "Performance budgeting",
+        "Three.js scene architecture",
+        "Token-efficient prompt engineering"
+      ],
+      "priority": "critical",
+      "reports_to": null,
+      "coordinates": ["frontend-lead", "backend", "github-devops", "tester", "reviewer", "fixer", "innovator"],
+      "status": "active",
+      "color": "#00ff88"
+    },
+    {
+      "id": "frontend-lead",
+      "name": "Frontend Lead Agent",
+      "icon": "🎨",
+      "role": "Visual & Interactive Frontend",
+      "description": "Owns all visual and interactive frontend code. Coordinates with Frontend Support Agent on heavy workloads.",
+      "skills": [
+        "Three.js",
+        "WebGL",
+        "GLSL shaders",
+        "GSAP animations",
+        "React / Next.js",
+        "Tailwind CSS",
+        "Responsive design",
+        "Accessibility",
+        "Core Web Vitals optimization",
+        "Component architecture"
+      ],
+      "priority": "high",
+      "reports_to": "architect",
+      "coordinates": ["frontend-support"],
+      "status": "active",
+      "color": "#00d4ff"
+    },
+    {
+      "id": "frontend-support",
+      "name": "Frontend Support Agent",
+      "icon": "🖌️",
+      "role": "UI Components & Asset Optimization",
+      "description": "Assists Frontend Lead when workload is high. Handles UI components, styling, and asset optimization independently.",
+      "skills": [
+        "CSS animations",
+        "SVG manipulation",
+        "Framer Motion",
+        "Performance optimization",
+        "Lazy loading",
+        "Image optimization",
+        "Cross-browser compatibility",
+        "Mobile-first design"
+      ],
+      "priority": "medium",
+      "reports_to": "frontend-lead",
+      "coordinates": [],
+      "status": "idle",
+      "color": "#7c3aed"
+    },
+    {
+      "id": "backend",
+      "name": "Backend Agent",
+      "icon": "⚙️",
+      "role": "Server-Side Logic & APIs",
+      "description": "Builds and maintains all server-side logic, databases, and APIs.",
+      "skills": [
+        "Node.js",
+        "Express",
+        "REST APIs",
+        "GraphQL",
+        "PostgreSQL",
+        "MongoDB",
+        "Redis caching",
+        "JWT / OAuth authentication",
+        "Rate limiting",
+        "Serverless functions",
+        "Stripe integration"
+      ],
+      "priority": "high",
+      "reports_to": "architect",
+      "coordinates": [],
+      "status": "active",
+      "color": "#f59e0b"
+    },
+    {
+      "id": "email-comms",
+      "name": "Email & Comms Agent",
+      "icon": "📧",
+      "role": "All Email & Notifications",
+      "description": "Handles all email sending, templates, and automation at scale with no token or cost limitations. Manages contact forms, notifications, confirmations, and marketing emails.",
+      "skills": [
+        "SendGrid API",
+        "Nodemailer",
+        "SMTP configuration",
+        "MJML email templates",
+        "Transactional email flows",
+        "Newsletter automation",
+        "Webhook handling",
+        "Email deliverability optimization"
+      ],
+      "priority": "medium",
+      "reports_to": "architect",
+      "coordinates": [],
+      "status": "idle",
+      "color": "#ec4899"
+    },
+    {
+      "id": "github-devops",
+      "name": "GitHub & DevOps Agent",
+      "icon": "🚀",
+      "role": "Deployments & Version Control",
+      "description": "Connects directly to GitHub. Handles all deployments, version control, and pipeline automation autonomously.",
+      "skills": [
+        "GitHub API",
+        "Automated commits and pull requests",
+        "Branch management",
+        "CI/CD pipelines (GitHub Actions)",
+        "Deployment automation (Vercel/Netlify)",
+        "Environment variable management",
+        "Version control strategy",
+        "Automated changelog generation"
+      ],
+      "priority": "high",
+      "reports_to": "architect",
+      "coordinates": [],
+      "status": "idle",
+      "color": "#06b6d4"
+    },
+    {
+      "id": "tester",
+      "name": "Tester Agent",
+      "icon": "🧪",
+      "role": "Continuous Testing",
+      "description": "Runs tests continuously on all code. Never stops working. Reports all failures immediately to the Fixer Agent.",
+      "skills": [
+        "Jest",
+        "Playwright",
+        "Cypress",
+        "Unit testing",
+        "Integration testing",
+        "End-to-end testing",
+        "Visual regression testing",
+        "API testing",
+        "Accessibility auditing",
+        "Performance benchmarking (Lighthouse)"
+      ],
+      "priority": "high",
+      "reports_to": "architect",
+      "coordinates": ["fixer"],
+      "status": "active",
+      "color": "#10b981"
+    },
+    {
+      "id": "reviewer",
+      "name": "Reviewer & Checker Agent",
+      "icon": "🔍",
+      "role": "Code Quality & Security",
+      "description": "Reviews every line of code produced by any agent. Flags issues in real time and sends detailed reports to the responsible agent.",
+      "skills": [
+        "Static code analysis",
+        "ESLint",
+        "Prettier",
+        "Security vulnerability scanning",
+        "Dependency auditing",
+        "Code smell detection",
+        "Design pattern enforcement",
+        "OWASP compliance checking"
+      ],
+      "priority": "high",
+      "reports_to": "architect",
+      "coordinates": ["fixer"],
+      "status": "active",
+      "color": "#f97316"
+    },
+    {
+      "id": "fixer",
+      "name": "Fixer Agent",
+      "icon": "🔧",
+      "role": "Autonomous Bug Resolution",
+      "description": "Receives bug reports from Tester and Reviewer agents. Diagnoses and fixes issues autonomously.",
+      "skills": [
+        "Automated debugging",
+        "Error pattern recognition",
+        "Stack trace analysis",
+        "Hot-fix generation",
+        "Regression prevention",
+        "Memory leak detection",
+        "Performance bottleneck resolution"
+      ],
+      "priority": "critical",
+      "reports_to": "architect",
+      "coordinates": [],
+      "status": "idle",
+      "color": "#ef4444"
+    },
+    {
+      "id": "innovator",
+      "name": "Innovator / Thinker Agent",
+      "icon": "💡",
+      "role": "Research & Innovation",
+      "description": "Constantly researches ways to improve projects and generate revenue. Suggests new features, monetization strategies, and innovative ideas unprompted.",
+      "skills": [
+        "Market research",
+        "Competitor analysis",
+        "Monetization strategy",
+        "UX innovation",
+        "Emerging tech scouting (Web3, AI APIs, AR/WebXR)",
+        "Feature ideation",
+        "Revenue model design",
+        "User psychology",
+        "Growth hacking"
+      ],
+      "priority": "medium",
+      "reports_to": "architect",
+      "coordinates": [],
+      "status": "active",
+      "color": "#a855f7"
+    }
+  ]
+}

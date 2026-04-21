@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat with the Team 💬</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --font: 'Nunito', sans-serif;
+    --text: #2d1f5e;
+    --text2: #6b5b9b;
+    --text3: #a99dc5;
+    --card: rgba(255,255,255,0.85);
+    --shadow: 0 8px 32px rgba(120,80,200,0.10);
+    --radius: 22px;
+    --radius-sm: 14px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: var(--font);
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f0e7ff 0%, #dceeff 35%, #e8f8f0 65%, #fff0f5 100%);
+    background-attachment: fixed;
+    color: var(--text);
+    display: flex; flex-direction: column;
+  }
+
+  body::before {
+    content:''; position:fixed;
+    width:500px; height:500px; border-radius:50%;
+    background: radial-gradient(circle, rgba(168,130,255,0.18) 0%, transparent 70%);
+    top:-150px; right:-100px; pointer-events:none; z-index:0;
+  }
+
+  /* NAV */
+  nav {
+    position:sticky; top:0; z-index:100;
+    background: rgba(255,255,255,0.72); backdrop-filter: blur(20px);
+    border-bottom: 2px solid rgba(168,130,255,0.15);
+    padding: 0 28px; height:62px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+
+  .nav-logo {
+    display:flex; align-items:center; gap:10px;
+    font-size:20px; font-weight:900;
+    background: linear-gradient(135deg,#7c3aed,#db2777);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+  .nav-logo span { font-size:26px; }
+
+  .nav-links { display:flex; gap:8px; }
+  .nav-link {
+    padding:8px 20px; border-radius:50px;
+    font-size:14px; font-weight:700; cursor:pointer;
+    transition:all 0.2s; text-decoration:none; color:var(--text2);
+    border:2px solid transparent; font-family:var(--font);
+  }
+  .nav-link:hover { background:rgba(124,58,237,0.08); color:#7c3aed; border-color:rgba(124,58,237,0.2); }
+  .nav-link.active { background:linear-gradient(135deg,#7c3aed,#db2777); color:white !important; -webkit-text-fill-color:white !important; }
+
+  /* MAIN */
+  main {
+    position:relative; z-index:1; flex:1;
+    display:grid; grid-template-columns:240px 1fr;
+    gap:16px; padding:20px 28px 28px;
+    max-height: calc(100vh - 62px); overflow:hidden;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    background:var(--card); backdrop-filter:blur(12px);
+    border:2px solid rgba(255,255,255,0.95);
+    border-radius:var(--radius); box-shadow:var(--shadow);
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+
+  .sidebar-head {
+    padding:16px 16px 12px;
+    border-bottom:2px solid rgba(168,130,255,0.1);
+    font-size:12px; font-weight:800; color:var(--text2);
+    text-transform:uppercase; letter-spacing:1px;
+  }
+
+  .sidebar-agents { flex:1; overflow-y:auto; padding:10px; scrollbar-width:thin; scrollbar-color:rgba(168,130,255,0.3) transparent; }
+
+  .side-agent {
+    display:flex; align-items:center; gap:10px;
+    padding:9px 10px; border-radius:var(--radius-sm);
+    margin-bottom:6px; cursor:pointer; transition:all 0.2s;
+    border:2px solid transparent;
+  }
+  .side-agent:hover { background:rgba(124,58,237,0.06); border-color:rgba(124,58,237,0.15); }
+  .side-agent.selected { background:rgba(124,58,237,0.08); border-color:rgba(124,58,237,0.2); }
+
+  .side-avatar {
+    width:32px; height:32px; border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; flex-shrink:0;
+    background:linear-gradient(135deg, var(--ac)22, var(--ac)0a);
+    border:2px solid var(--ac)33;
+  }
+
+  .side-name { font-size:12px; font-weight:800; color:var(--text); flex:1; }
+  .side-role { font-size:10px; font-weight:600; color:var(--text3); }
+
+  .side-dot {
+    width:8px; height:8px; border-radius:50%; flex-shrink:0;
+  }
+  .dot-active { background:#10b981; box-shadow:0 0 6px rgba(16,185,129,0.5); animation:pulse 2s infinite; }
+  .dot-idle { background:#cbd5e1; }
+  .dot-working { background:#f59e0b; box-shadow:0 0 6px rgba(245,158,11,0.5); animation:pulse 1s infinite; }
+
+  /* CHAT AREA */
+  .chat-area {
+    background:var(--card); backdrop-filter:blur(12px);
+    border:2px solid rgba(255,255,255,0.95);
+    border-radius:var(--radius); box-shadow:var(--shadow);
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+
+  .chat-header {
+    padding:16px 20px;
+    border-bottom:2px solid rgba(168,130,255,0.1);
+    display:flex; align-items:center; gap:12px;
+  }
+
+  .chat-bot-avatar {
+    width:44px; height:44px; border-radius:14px;
+    background:linear-gradient(135deg,#7c3aed,#db2777);
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; color:white; flex-shrink:0;
+    box-shadow:0 6px 20px rgba(124,58,237,0.3);
+  }
+
+  .chat-bot-info { flex:1; }
+  .chat-bot-name { font-size:16px; font-weight:900; }
+  .chat-bot-status { font-size:11px; font-weight:700; color:#059669; display:flex; align-items:center; gap:5px; }
+  .chat-bot-status-dot { width:6px; height:6px; border-radius:50%; background:#10b981; animation:pulse 2s infinite; }
+
+  .quick-chips {
+    display:flex; gap:8px; flex-wrap:wrap; padding:12px 20px;
+    border-bottom:2px solid rgba(168,130,255,0.08);
+  }
+
+  .chip {
+    font-size:11px; font-weight:700; padding:6px 14px;
+    border-radius:50px; cursor:pointer; transition:all 0.2s;
+    background:rgba(124,58,237,0.08); color:#7c3aed;
+    border:2px solid rgba(124,58,237,0.15); font-family:var(--font);
+  }
+  .chip:hover { background:linear-gradient(135deg,#7c3aed,#db2777); color:white; border-color:transparent; transform:translateY(-1px); }
+
+  /* MESSAGES */
+  .messages { flex:1; overflow-y:auto; padding:18px 20px; scrollbar-width:thin; scrollbar-color:rgba(168,130,255,0.3) transparent; }
+
+  .msg { display:flex; gap:10px; margin-bottom:16px; animation:slideUp 0.3s forwards; opacity:0; }
+  .msg.user-msg { flex-direction:row-reverse; }
+
+  .msg-avatar {
+    width:34px; height:34px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; flex-shrink:0;
+  }
+  .bot-avatar-sm { background:linear-gradient(135deg,#7c3aed22,#db277722); border:2px solid rgba(124,58,237,0.2); }
+  .user-avatar-sm { background:linear-gradient(135deg,#dbeafe,#bfdbfe); border:2px solid rgba(59,130,246,0.2); }
+
+  .msg-body { max-width:72%; }
+  .user-msg .msg-body { align-items:flex-end; }
+
+  .msg-sender { font-size:11px; font-weight:800; color:var(--text2); margin-bottom:4px; }
+  .user-msg .msg-sender { text-align:right; color:#3b82f6; }
+
+  .msg-bubble {
+    padding:11px 15px; border-radius:4px 16px 16px 16px;
+    font-size:13px; font-weight:600; line-height:1.6; color:var(--text);
+    background:white; border:2px solid rgba(168,130,255,0.12);
+    box-shadow:0 2px 12px rgba(120,80,200,0.06);
+    border-left:3px solid #7c3aed;
+  }
+  .user-msg .msg-bubble {
+    border-radius:16px 4px 16px 16px;
+    background:linear-gradient(135deg,#7c3aed,#db2777); color:white;
+    border:none; border-right:3px solid rgba(255,255,255,0.3);
+    border-left:none;
+    box-shadow:0 6px 20px rgba(124,58,237,0.3);
+  }
+
+  .msg-time { font-size:10px; font-weight:600; color:var(--text3); margin-top:3px; }
+  .user-msg .msg-time { text-align:right; }
+
+  /* Typing indicator */
+  .typing {
+    display:flex; gap:10px; margin-bottom:16px;
+    animation:slideUp 0.3s forwards;
+  }
+  .typing-dots {
+    background:white; border:2px solid rgba(168,130,255,0.12);
+    border-left:3px solid #7c3aed;
+    padding:12px 18px; border-radius:4px 16px 16px 16px;
+    display:flex; gap:5px; align-items:center;
+    box-shadow:0 2px 12px rgba(120,80,200,0.06);
+  }
+  .typing-dot { width:7px; height:7px; border-radius:50%; background:#a99dc5; animation:typingBounce 1.2s infinite; }
+  .typing-dot:nth-child(2) { animation-delay:0.2s; }
+  .typing-dot:nth-child(3) { animation-delay:0.4s; }
+
+  /* INPUT */
+  .input-area {
+    padding:14px 20px;
+    border-top:2px solid rgba(168,130,255,0.1);
+    display:flex; gap:10px; align-items:center;
+  }
+
+  .chat-input {
+    flex:1; padding:12px 18px; border-radius:50px;
+    border:2px solid rgba(168,130,255,0.2); font-family:var(--font);
+    font-size:13px; font-weight:600; color:var(--text);
+    background:white; outline:none; transition:all 0.2s;
+  }
+  .chat-input:focus { border-color:rgba(124,58,237,0.4); box-shadow:0 0 0 3px rgba(124,58,237,0.1); }
+  .chat-input::placeholder { color:var(--text3); }
+
+  .send-btn {
+    width:46px; height:46px; border-radius:50%;
+    background:linear-gradient(135deg,#7c3aed,#db2777); border:none;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:20px; transition:all 0.2s;
+    box-shadow:0 6px 20px rgba(124,58,237,0.3); flex-shrink:0;
+  }
+  .send-btn:hover { transform:scale(1.08); box-shadow:0 8px 28px rgba(124,58,237,0.4); }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  @keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes typingBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+
+  ::-webkit-scrollbar { width:5px; }
+  ::-webkit-scrollbar-thumb { background:rgba(168,130,255,0.3); border-radius:5px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo"><span>🤖</span> Agent Hub</div>
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 Dashboard</a>
+    <a class="nav-link active" href="chat.html">💬 Chat with Team</a>
+  </div>
+</nav>
+
+<main>
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-head">🤖 Team Online</div>
+    <div class="sidebar-agents" id="sidebarAgents"></div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="chat-area">
+    <div class="chat-header">
+      <div class="chat-bot-avatar">🤖</div>
+      <div class="chat-bot-info">
+        <div class="chat-bot-name">Agent Team Assistant</div>
+        <div class="chat-bot-status"><div class="chat-bot-status-dot"></div> All 10 agents connected & working</div>
+      </div>
+    </div>
+
+    <!-- Quick chips -->
+    <div class="quick-chips">
+      <button class="chip" onclick="quickSend('What are you currently working on?')">🔨 Current tasks</button>
+      <button class="chip" onclick="quickSend('Which agent is handling payments?')">💳 Payments</button>
+      <button class="chip" onclick="quickSend('What is the Architect doing?')">🧠 Architect</button>
+      <button class="chip" onclick="quickSend('Any bugs found?')">🐛 Bugs</button>
+      <button class="chip" onclick="quickSend('What ideas does the Innovator have?')">💡 Ideas</button>
+      <button class="chip" onclick="quickSend('What integrations are connected?')">🔌 Integrations</button>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="input-area">
+      <input class="chat-input" id="chatInput" placeholder="Ask the team anything… e.g. 'Who is building the payment flow?'" onkeydown="if(event.key==='Enter')sendMsg()">
+      <button class="send-btn" onclick="sendMsg()">↑</button>
+    </div>
+  </div>
+</main>
+
+<script>
+const AGENTS = [
+  { id:'architect', icon:'🧠', name:'Architect', role:'The Brain', color:'#7c3aed', status:'active' },
+  { id:'frontend-lead', icon:'🎨', name:'Frontend Lead', role:'Visual & Interactive', color:'#db2777', status:'active' },
+  { id:'frontend-support', icon:'🖌️', name:'Frontend Support', role:'UI & Assets', color:'#9333ea', status:'idle' },
+  { id:'backend', icon:'⚙️', name:'Backend Agent', role:'APIs & Databases', color:'#d97706', status:'active' },
+  { id:'email', icon:'📧', name:'Email & Comms', role:'All Notifications', color:'#dc2626', status:'idle' },
+  { id:'devops', icon:'🚀', name:'GitHub DevOps', role:'Deploy & Version Control', color:'#059669', status:'idle' },
+  { id:'tester', icon:'🧪', name:'Tester Agent', role:'Continuous Testing', color:'#2563eb', status:'active' },
+  { id:'reviewer', icon:'🔍', name:'Reviewer', role:'Code Quality', color:'#ea580c', status:'active' },
+  { id:'fixer', icon:'🔧', name:'Fixer Agent', role:'Bug Resolution', color:'#e11d48', status:'working' },
+  { id:'innovator', icon:'💡', name:'Innovator', role:'Research & Ideas', color:'#7c3aed', status:'active' },
+];
+
+const RESPONSES = [
+  {
+    match: ['current','working','doing','status','what is','what are','update'],
+    response: `Here's what the team is working on right now! 🔥\n\n🧠 **Architect** — Breaking the Clover payment integration into subtasks and delegating to the team.\n\n⚙️ **Backend Agent** — Building the Supabase Edge Function that will charge customers via Clover's API.\n\n🎨 **Frontend Lead** — Integrating Clover Payments.js into the checkout flow so the card form appears on-site.\n\n🧪 **Tester Agent** — Running end-to-end tests on the checkout flow, all 47 tests passing ✅\n\n🔍 **Reviewer** — Doing an OWASP security audit on the payment code.\n\n🔧 **Fixer** — Patched a performance bottleneck — API response time went from 340ms → 80ms ⚡\n\n💡 **Innovator** — Researching AR menu previews with WebXR and SMS notifications for orders.`
+  },
+  {
+    match: ['payment','clover','checkout','charge','card'],
+    response: `Great question! Here's how the payment flow is being built 💳\n\n**Who's involved:**\n• ⚙️ **Backend Agent** is building a Supabase Edge Function called \`charge-order\` — this is what actually charges the customer's card via Clover's eCommerce API\n• 🎨 **Frontend Lead** is embedding Clover Payments.js — a secure iframe that collects card details directly on the site\n• 🧠 **Architect** designed the architecture: card gets tokenized on the frontend → token sent to Edge Function → Edge Function calls Clover to charge\n\n**Current status:** Building in sandbox mode (test money only). Once tested, we'll swap in real Clover credentials to go live.\n\n**Why Supabase Edge Functions?** Already in the stack — no new services or monthly fees needed!`
+  },
+  {
+    match: ['architect','brain','plan','design','structure'],
+    response: `The 🧠 **Architect Agent** is the team lead — here's what it's up to!\n\n**Current focus:** Clover payment integration planning\n\n**What it designed:**\n• Payment flow: Frontend tokenization → Supabase Edge Function → Clover API\n• Database schema for the orders table (id, customer, items, total, payment_token, status)\n• API contracts for all new endpoints\n\n**Who it's coordinating:**\n• Delegated payment UI to Frontend Lead\n• Delegated Edge Function to Backend Agent\n• Assigned OWASP security review to Reviewer\n• Told Tester to build E2E checkout tests\n\nThe Architect literally never writes code — it just plans, coordinates, and makes sure everything fits together perfectly. 🎯`
+  },
+  {
+    match: ['bug','error','fix','crash','issue','problem','broken'],
+    response: `The 🔧 **Fixer Agent** is on it 24/7! Here's the latest bug report:\n\n**Recently fixed:**\n✅ Memory leak in event listener cleanup\n✅ Null check on user session object was missing\n✅ API response time: 340ms → 80ms (huge win!)\n\n**Currently investigating:**\n⚠️ Visual regression in checkout modal (spotted by Tester Agent)\n⚠️ CSP header missing (flagged by Reviewer — low priority)\n\n**How it works:** The 🧪 Tester Agent and 🔍 Reviewer run continuously and automatically send bug reports to the Fixer. The Fixer diagnoses, patches, and marks resolved — no manual work needed!`
+  },
+  {
+    match: ['idea','innovator','feature','new','suggest','revenue','monetize','grow'],
+    response: `The 💡 **Innovator / Thinker Agent** has been busy researching! Here are the latest ideas saved to the Obsidian vault:\n\n**🔥 Top Ideas This Week:**\n\n1. **AR Menu Previews (WebXR)** — Let customers see dishes in AR before ordering. WebXR is now stable in Chrome & Safari. Est. 2 weeks to build.\n\n2. **Real-Time Catering Booking** — None of the top 3 local competitors have online booking. Big opportunity!\n\n3. **Loyalty Points System** — Simple points-per-order in Supabase. Increases repeat customers by ~23% on average.\n\n4. **SMS Order Notifications (Twilio)** — SMS open rate is 98% vs email's 20%. Quick win.\n\n5. **Catering peaks Fri–Sun** — Market data says to focus ad spend on weekends.\n\nThe Innovator generates a full ideas report every Sunday and saves it to the vault automatically!`
+  },
+  {
+    match: ['integration','connect','plugin','github','sendgrid','vercel','obsidian','email'],
+    response: `All 5 integrations are connected and running! 🔌✨\n\n🐙 **GitHub** — Auto commits stable changes, opens PRs automatically, runs CI/CD pipelines via GitHub Actions\n\n📨 **SendGrid** — Handles all emails: order confirmations, catering inquiries, marketing newsletters. Replaced EmailJS completely.\n\n▲ **Vercel** — Auto-deploys every time the GitHub DevOps agent pushes to main. Preview URLs generated for every branch.\n\n🧠 **Obsidian Vault** — The team's shared brain! Every agent writes notes, ideas, and decisions here. Synced locally.\n\n🔍 **Web Search** — Innovator and Reviewer agents have live internet access for research and market analysis.\n\nAll credentials are stored securely as environment variables — never hardcoded!`
+  },
+  {
+    match: ['frontend','ui','design','visual','css','react','animation'],
+    response: `The frontend team is crushing it! 🎨\n\n🎨 **Frontend Lead** is the senior frontend engineer:\n• Currently embedding Clover Payments.js into the checkout form\n• Optimizing the Three.js render loop (targeting stable 60fps)\n• Building responsive card grid for the menu\n\n🖌️ **Frontend Support** is currently idle but kicks in when Frontend Lead needs help:\n• Specializes in CSS animations, image optimization, and mobile-first design\n• Last task: Reduced hero image from 800kb → 180kb\n• Lighthouse score improved to 94 🚀\n\nThe two agents coordinate so Frontend Lead handles complex/interactive code while Support handles assets and polish.`
+  },
+  {
+    match: ['backend','api','database','server','supabase','node'],
+    response: `The ⚙️ **Backend Agent** is building out all the server-side logic!\n\n**Currently building:**\n• Supabase Edge Function: \`charge-order\` — takes a Clover token + amount, calls Clover's eCommerce API, returns success/failure\n• PostgreSQL orders table: id, customer_id, items[], total, status, payment_token, created_at\n• JWT authentication middleware for protected routes\n\n**Stack being used:**\n• Supabase (PostgreSQL + Edge Functions)\n• Clover eCommerce API for payments\n• Redis caching for API responses\n\n**Why Supabase Edge Functions instead of Netlify?** Already in the stack — no extra services needed, and it's free within the current plan!`
+  },
+  {
+    match: ['test','tester','qa','quality','e2e','playwright','jest'],
+    response: `The 🧪 **Tester Agent** never stops running! Here's the current test status:\n\n✅ **47/47 Playwright E2E tests passing**\n✅ **Unit tests: 100% coverage on payment module**\n✅ **API tests: All endpoints healthy**\n⚠️ **Visual regression detected: checkout modal styling**  (forwarded to Fixer)\n\n**Tools running continuously:**\n• Playwright — end-to-end browser automation\n• Jest — unit and integration tests\n• Lighthouse — performance & accessibility audits\n• Cypress — checkout flow testing\n\nThe Tester auto-reports all failures directly to the 🔧 Fixer Agent — no human intervention needed for most issues!`
+  },
+  {
+    match: ['hello','hi','hey','yo','sup','what','who'],
+    response: `Hey! 👋 Welcome to the Agent Hub!\n\nI'm the team assistant — I can tell you exactly what all 10 agents are building, what decisions have been made, and what's coming next.\n\n**Quick things you can ask me:**\n• "What is everyone working on right now?"\n• "Which agent is handling the Clover payment?"\n• "Any bugs found recently?"\n• "What ideas does the Innovator have?"\n• "What integrations are connected?"\n• "Tell me about the Architect"\n\nOr just type anything and I'll do my best! 🤖`
+  },
+];
+
+function findResponse(text) {
+  const lower = text.toLowerCase();
+  for (const r of RESPONSES) {
+    if (r.match.some(kw => lower.includes(kw))) return r.response;
+  }
+  return `Hmm, I'm not sure about that specific thing! 🤔\n\nTry asking me about:\n• What agents are currently working on\n• The Clover payment integration\n• Recent bugs or fixes\n• The Innovator's latest ideas\n• Which integrations are connected\n\nOr click one of the quick chips above! 💬`;
+}
+
+function formatResponse(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+}
+
+let msgCount = 0;
+
+function addMsg(text, isUser = false, time = null) {
+  const msgs = document.getElementById('messages');
+  const now = time || new Date().toTimeString().slice(0,5);
+  const el = document.createElement('div');
+  el.className = `msg${isUser ? ' user-msg' : ''}`;
+
+  if (isUser) {
+    el.innerHTML = `
+      <div class="msg-avatar user-avatar-sm">🧑</div>
+      <div class="msg-body">
+        <div class="msg-sender">You</div>
+        <div class="msg-bubble">${text}</div>
+        <div class="msg-time">${now}</div>
+      </div>`;
+  } else {
+    el.innerHTML = `
+      <div class="msg-avatar bot-avatar-sm">🤖</div>
+      <div class="msg-body">
+        <div class="msg-sender">Agent Team</div>
+        <div class="msg-bubble">${formatResponse(text)}</div>
+        <div class="msg-time">${now}</div>
+      </div>`;
+  }
+
+  msgs.appendChild(el);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('messages');
+  const el = document.createElement('div');
+  el.className = 'typing'; el.id = 'typing';
+  el.innerHTML = `
+    <div class="msg-avatar bot-avatar-sm">🤖</div>
+    <div class="typing-dots">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    </div>`;
+  msgs.appendChild(el);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing');
+  if (t) t.remove();
+}
+
+function sendMsg() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  addMsg(text, true);
+
+  showTyping();
+  const delay = 800 + Math.random() * 700;
+  setTimeout(() => {
+    removeTyping();
+    addMsg(findResponse(text));
+  }, delay);
+}
+
+function quickSend(text) {
+  document.getElementById('chatInput').value = text;
+  sendMsg();
+}
+
+// Sidebar
+function renderSidebar() {
+  document.getElementById('sidebarAgents').innerHTML = AGENTS.map(a => {
+    const dc = a.status === 'active' ? 'dot-active' : a.status === 'working' ? 'dot-working' : 'dot-idle';
+    return `<div class="side-agent" style="--ac:${a.color}">
+      <div class="side-avatar" style="--ac:${a.color};background:${a.color}18;border:2px solid ${a.color}30">${a.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div class="side-name">${a.name}</div>
+        <div class="side-role">${a.role}</div>
+      </div>
+      <div class="side-dot ${dc}"></div>
+    </div>`;
+  }).join('');
+}
+
+// Welcome message
+window.addEventListener('load', () => {
+  renderSidebar();
+  setTimeout(() => {
+    addMsg(`Hey there! 👋 I'm the Agent Hub assistant — your window into what all 10 agents are doing right now.\n\nWe're currently deep in the **Clover payment integration** for Biryani Temptations! The Backend Agent is building the Supabase Edge Function, the Frontend Lead is embedding the payment form, and the Tester is running E2E tests.\n\nAsk me anything — I've got the full picture! 🚀`, false, new Date().toTimeString().slice(0,5));
+  }, 500);
+});
+</script>
+</body>
+</html>
