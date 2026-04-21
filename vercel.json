@@ -1,19 +1,5 @@
 {
-  "version": 2,
-  "name": "agent-hub",
-  "builds": [
-    { "src": "api/**/*.js", "use": "@vercel/node" },
-    { "src": "*.html", "use": "@vercel/static" },
-    { "src": "*.json", "use": "@vercel/static", "config": { "zeroConfig": true } }
-  ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/chat", "dest": "/chat.html" },
-    { "src": "/", "dest": "/index.html" }
-  ],
-  "env": {
-    "GROQ_KEY": "@groq_key",
-    "SB_URL": "@sb_url",
-    "SB_KEY": "@sb_key"
-  }
+  "rewrites": [
+    { "source": "/chat", "destination": "/chat.html" }
+  ]
 }

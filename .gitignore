@@ -5,3 +5,4 @@ logs/
 memory/
 *.log
 .DS_Store
+.vercel
