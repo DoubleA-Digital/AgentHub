@@ -131,6 +131,15 @@
     background:#0d0d0d;
   }
 
+  .agent-chat-header {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .agent-chat-avatar {
+    width: 44px; height: 44px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+
   .chat-bot-avatar {
     width:44px; height:44px; border-radius:14px;
     background:linear-gradient(135deg,#cc0000,#ff2020);
@@ -244,6 +253,29 @@
 
   ::-webkit-scrollbar { width:5px; }
   ::-webkit-scrollbar-thumb { background:rgba(200,0,0,0.3); border-radius:5px; }
+
+/* TOOL STEPS */
+.tool-steps { margin-bottom: 8px; }
+.tool-step {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: #0d0d0d; border: 1px solid rgba(200,0,0,0.2);
+  border-radius: 10px; padding: 10px 13px; margin-bottom: 6px;
+  font-size: 12px; animation: slideUp 0.25s forwards; opacity: 0;
+}
+.tool-step.ok { border-left: 3px solid #10b981; }
+.tool-step.err { border-left: 3px solid #ef4444; }
+.tool-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.tool-body { flex: 1; min-width: 0; }
+.tool-name { font-size: 11px; font-weight: 800; color: #cc0000; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+.tool-result {
+  font-size: 11px; font-weight: 600; color: #999; line-height: 1.5;
+  white-space: pre-wrap; word-break: break-word;
+  max-height: 120px; overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: rgba(200,0,0,0.3) transparent;
+}
+.tool-status { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 50px; margin-left: auto; flex-shrink: 0; }
+.tool-status.ok { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
+.tool-status.err { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
 </style>
 </head>
 <body>
@@ -260,28 +292,34 @@
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sidebar-head">🤖 Team Online</div>
+    <div style="padding:8px 10px 4px">
+      <div class="side-agent selected" id="agent-btn-team" onclick="selectAgent('team')" style="background:rgba(200,0,0,0.12);border-color:rgba(200,0,0,0.35)">
+        <div class="side-avatar" style="background:rgba(200,0,0,0.15);border:2px solid rgba(200,0,0,0.4)">🤖</div>
+        <div style="flex:1;min-width:0">
+          <div class="side-name">Whole Team</div>
+          <div class="side-role">All 10 agents</div>
+        </div>
+        <div class="side-dot dot-active"></div>
+      </div>
+    </div>
+    <div style="padding:0 10px 4px;font-size:9px;font-weight:800;color:#444;text-transform:uppercase;letter-spacing:1px">Individual Agents</div>
     <div class="sidebar-agents" id="sidebarAgents"></div>
   </div>
 
   <!-- CHAT -->
   <div class="chat-area">
     <div class="chat-header">
-      <div class="chat-bot-avatar">🤖</div>
-      <div class="chat-bot-info">
-        <div class="chat-bot-name">Agent Team Assistant</div>
-        <div class="chat-bot-status"><div class="chat-bot-status-dot"></div> All 10 agents connected & working</div>
+      <div class="agent-chat-header" id="chatHeader">
+        <div class="agent-chat-avatar" style="background:linear-gradient(135deg,#cc0000,#ff2020);box-shadow:0 6px 20px rgba(200,0,0,0.4)">🤖</div>
+        <div class="chat-bot-info">
+          <div class="chat-bot-name">Agent Team Assistant</div>
+          <div class="chat-bot-status"><div class="chat-bot-status-dot"></div> All 10 agents connected</div>
+        </div>
       </div>
     </div>
 
     <!-- Quick chips -->
-    <div class="quick-chips">
-      <button class="chip" onclick="quickSend('What are you currently working on?')">🔨 Current tasks</button>
-      <button class="chip" onclick="quickSend('Which agent is handling payments?')">💳 Payments</button>
-      <button class="chip" onclick="quickSend('What is the Architect doing?')">🧠 Architect</button>
-      <button class="chip" onclick="quickSend('Any bugs found?')">🐛 Bugs</button>
-      <button class="chip" onclick="quickSend('What ideas does the Innovator have?')">💡 Ideas</button>
-      <button class="chip" onclick="quickSend('What integrations are connected?')">🔌 Integrations</button>
-    </div>
+    <div class="quick-chips" id="quickChips"></div>
 
     <div class="messages" id="messages"></div>
 
@@ -298,97 +336,139 @@
 
 <script>
 const AGENTS = [
-  { id:'architect', icon:'🧠', name:'Architect', role:'The Brain', color:'#7c3aed', status:'active' },
-  { id:'frontend-lead', icon:'🎨', name:'Frontend Lead', role:'Visual & Interactive', color:'#db2777', status:'active' },
-  { id:'frontend-support', icon:'🖌️', name:'Frontend Support', role:'UI & Assets', color:'#9333ea', status:'idle' },
-  { id:'backend', icon:'⚙️', name:'Backend Agent', role:'APIs & Databases', color:'#d97706', status:'active' },
-  { id:'email', icon:'📧', name:'Email & Comms', role:'All Notifications', color:'#dc2626', status:'idle' },
-  { id:'devops', icon:'🚀', name:'GitHub DevOps', role:'Deploy & Version Control', color:'#059669', status:'idle' },
-  { id:'tester', icon:'🧪', name:'Tester Agent', role:'Continuous Testing', color:'#2563eb', status:'active' },
-  { id:'reviewer', icon:'🔍', name:'Reviewer', role:'Code Quality', color:'#ea580c', status:'active' },
-  { id:'fixer', icon:'🔧', name:'Fixer Agent', role:'Bug Resolution', color:'#e11d48', status:'working' },
-  { id:'innovator', icon:'💡', name:'Innovator', role:'Research & Ideas', color:'#7c3aed', status:'active' },
+  { id:'architect',       icon:'🧠', name:'Architect',        role:'The Brain',            color:'#7c3aed', status:'active' },
+  { id:'frontend-lead',   icon:'🎨', name:'Frontend Lead',    role:'Visual & Interactive', color:'#db2777', status:'active' },
+  { id:'frontend-support',icon:'🖌️', name:'Frontend Support', role:'UI & Assets',          color:'#9333ea', status:'idle'   },
+  { id:'backend',         icon:'⚙️', name:'Backend Agent',    role:'APIs & Databases',     color:'#d97706', status:'active' },
+  { id:'email',           icon:'📧', name:'Email & Comms',    role:'All Notifications',    color:'#dc2626', status:'idle'   },
+  { id:'devops',          icon:'🚀', name:'GitHub DevOps',    role:'Deploy & Version Control', color:'#059669', status:'idle' },
+  { id:'tester',          icon:'🧪', name:'Tester Agent',     role:'Continuous Testing',   color:'#2563eb', status:'active' },
+  { id:'reviewer',        icon:'🔍', name:'Reviewer',         role:'Code Quality',         color:'#ea580c', status:'active' },
+  { id:'fixer',           icon:'🔧', name:'Fixer Agent',      role:'Bug Resolution',       color:'#e11d48', status:'working'},
+  { id:'innovator',       icon:'💡', name:'Innovator',        role:'Research & Ideas',     color:'#7c3aed', status:'active' },
 ];
 
-const RESPONSES = [
-  {
-    match: ['current','working','doing','status','what is','what are','update'],
-    response: `Here's what the team is working on right now! 🔥\n\n🧠 **Architect** — Breaking the Clover payment integration into subtasks and delegating to the team.\n\n⚙️ **Backend Agent** — Building the Supabase Edge Function that will charge customers via Clover's API.\n\n🎨 **Frontend Lead** — Integrating Clover Payments.js into the checkout flow so the card form appears on-site.\n\n🧪 **Tester Agent** — Running end-to-end tests on the checkout flow, all 47 tests passing ✅\n\n🔍 **Reviewer** — Doing an OWASP security audit on the payment code.\n\n🔧 **Fixer** — Patched a performance bottleneck — API response time went from 340ms → 80ms ⚡\n\n💡 **Innovator** — Researching AR menu previews with WebXR and SMS notifications for orders.`
-  },
-  {
-    match: ['payment','clover','checkout','charge','card'],
-    response: `Great question! Here's how the payment flow is being built 💳\n\n**Who's involved:**\n• ⚙️ **Backend Agent** is building a Supabase Edge Function called \`charge-order\` — this is what actually charges the customer's card via Clover's eCommerce API\n• 🎨 **Frontend Lead** is embedding Clover Payments.js — a secure iframe that collects card details directly on the site\n• 🧠 **Architect** designed the architecture: card gets tokenized on the frontend → token sent to Edge Function → Edge Function calls Clover to charge\n\n**Current status:** Building in sandbox mode (test money only). Once tested, we'll swap in real Clover credentials to go live.\n\n**Why Supabase Edge Functions?** Already in the stack — no new services or monthly fees needed!`
-  },
-  {
-    match: ['architect','brain','plan','design','structure'],
-    response: `The 🧠 **Architect Agent** is the team lead — here's what it's up to!\n\n**Current focus:** Clover payment integration planning\n\n**What it designed:**\n• Payment flow: Frontend tokenization → Supabase Edge Function → Clover API\n• Database schema for the orders table (id, customer, items, total, payment_token, status)\n• API contracts for all new endpoints\n\n**Who it's coordinating:**\n• Delegated payment UI to Frontend Lead\n• Delegated Edge Function to Backend Agent\n• Assigned OWASP security review to Reviewer\n• Told Tester to build E2E checkout tests\n\nThe Architect literally never writes code — it just plans, coordinates, and makes sure everything fits together perfectly. 🎯`
-  },
-  {
-    match: ['bug','error','fix','crash','issue','problem','broken'],
-    response: `The 🔧 **Fixer Agent** is on it 24/7! Here's the latest bug report:\n\n**Recently fixed:**\n✅ Memory leak in event listener cleanup\n✅ Null check on user session object was missing\n✅ API response time: 340ms → 80ms (huge win!)\n\n**Currently investigating:**\n⚠️ Visual regression in checkout modal (spotted by Tester Agent)\n⚠️ CSP header missing (flagged by Reviewer — low priority)\n\n**How it works:** The 🧪 Tester Agent and 🔍 Reviewer run continuously and automatically send bug reports to the Fixer. The Fixer diagnoses, patches, and marks resolved — no manual work needed!`
-  },
-  {
-    match: ['idea','innovator','feature','new','suggest','revenue','monetize','grow'],
-    response: `The 💡 **Innovator / Thinker Agent** has been busy researching! Here are the latest ideas saved to the Obsidian vault:\n\n**🔥 Top Ideas This Week:**\n\n1. **AR Menu Previews (WebXR)** — Let customers see dishes in AR before ordering. WebXR is now stable in Chrome & Safari. Est. 2 weeks to build.\n\n2. **Real-Time Catering Booking** — None of the top 3 local competitors have online booking. Big opportunity!\n\n3. **Loyalty Points System** — Simple points-per-order in Supabase. Increases repeat customers by ~23% on average.\n\n4. **SMS Order Notifications (Twilio)** — SMS open rate is 98% vs email's 20%. Quick win.\n\n5. **Catering peaks Fri–Sun** — Market data says to focus ad spend on weekends.\n\nThe Innovator generates a full ideas report every Sunday and saves it to the vault automatically!`
-  },
-  {
-    match: ['integration','connect','plugin','github','sendgrid','vercel','obsidian','email'],
-    response: `All 5 integrations are connected and running! 🔌✨\n\n🐙 **GitHub** — Auto commits stable changes, opens PRs automatically, runs CI/CD pipelines via GitHub Actions\n\n📨 **SendGrid** — Handles all emails: order confirmations, catering inquiries, marketing newsletters. Replaced EmailJS completely.\n\n▲ **Vercel** — Auto-deploys every time the GitHub DevOps agent pushes to main. Preview URLs generated for every branch.\n\n🧠 **Obsidian Vault** — The team's shared brain! Every agent writes notes, ideas, and decisions here. Synced locally.\n\n🔍 **Web Search** — Innovator and Reviewer agents have live internet access for research and market analysis.\n\nAll credentials are stored securely as environment variables — never hardcoded!`
-  },
-  {
-    match: ['frontend','ui','design','visual','css','react','animation'],
-    response: `The frontend team is crushing it! 🎨\n\n🎨 **Frontend Lead** is the senior frontend engineer:\n• Currently embedding Clover Payments.js into the checkout form\n• Optimizing the Three.js render loop (targeting stable 60fps)\n• Building responsive card grid for the menu\n\n🖌️ **Frontend Support** is currently idle but kicks in when Frontend Lead needs help:\n• Specializes in CSS animations, image optimization, and mobile-first design\n• Last task: Reduced hero image from 800kb → 180kb\n• Lighthouse score improved to 94 🚀\n\nThe two agents coordinate so Frontend Lead handles complex/interactive code while Support handles assets and polish.`
-  },
-  {
-    match: ['backend','api','database','server','supabase','node'],
-    response: `The ⚙️ **Backend Agent** is building out all the server-side logic!\n\n**Currently building:**\n• Supabase Edge Function: \`charge-order\` — takes a Clover token + amount, calls Clover's eCommerce API, returns success/failure\n• PostgreSQL orders table: id, customer_id, items[], total, status, payment_token, created_at\n• JWT authentication middleware for protected routes\n\n**Stack being used:**\n• Supabase (PostgreSQL + Edge Functions)\n• Clover eCommerce API for payments\n• Redis caching for API responses\n\n**Why Supabase Edge Functions instead of Netlify?** Already in the stack — no extra services needed, and it's free within the current plan!`
-  },
-  {
-    match: ['test','tester','qa','quality','e2e','playwright','jest'],
-    response: `The 🧪 **Tester Agent** never stops running! Here's the current test status:\n\n✅ **47/47 Playwright E2E tests passing**\n✅ **Unit tests: 100% coverage on payment module**\n✅ **API tests: All endpoints healthy**\n⚠️ **Visual regression detected: checkout modal styling**  (forwarded to Fixer)\n\n**Tools running continuously:**\n• Playwright — end-to-end browser automation\n• Jest — unit and integration tests\n• Lighthouse — performance & accessibility audits\n• Cypress — checkout flow testing\n\nThe Tester auto-reports all failures directly to the 🔧 Fixer Agent — no human intervention needed for most issues!`
-  },
-  {
-    match: ['hello','hi','hey','yo','sup','what','who'],
-    response: `Hey! 👋 Welcome to the Agent Hub!\n\nI'm the team assistant — I can tell you exactly what all 10 agents are building, what decisions have been made, and what's coming next.\n\n**Quick things you can ask me:**\n• "What is everyone working on right now?"\n• "Which agent is handling the Clover payment?"\n• "Any bugs found recently?"\n• "What ideas does the Innovator have?"\n• "What integrations are connected?"\n• "Tell me about the Architect"\n\nOr just type anything and I'll do my best! 🤖`
-  },
-];
+let activeAgent = 'team'; // 'team' or agent id
+let chatHistories = { team: [] }; // per-agent histories
+AGENTS.forEach(a => chatHistories[a.id] = []);
 
-function findResponse(text) {
-  const lower = text.toLowerCase();
-  for (const r of RESPONSES) {
-    if (r.match.some(kw => lower.includes(kw))) return r.response;
-  }
-  return `Hmm, I'm not sure about that specific thing! 🤔\n\nTry asking me about:\n• What agents are currently working on\n• The Clover payment integration\n• Recent bugs or fixes\n• The Innovator's latest ideas\n• Which integrations are connected\n\nOr click one of the quick chips above! 💬`;
+function toolIcon(name) {
+  const icons = { git_status:'🔍', git_push:'🚀', run_command:'⚡', list_files:'📂', read_file:'📄', write_file:'✏️', edit_file:'🔧', deploy:'🌐', create_project:'✨' };
+  return icons[name] || '🔧';
 }
 
 function formatResponse(text) {
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, '<br>');
+  return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
 }
 
-let msgCount = 0;
-let chatHistory = JSON.parse(localStorage.getItem('chatHistory') || '[]');
+// ── SELECT AGENT ──────────────────────────────────────────────
+function selectAgent(id) {
+  activeAgent = id;
 
-function saveHistory() {
-  localStorage.setItem('chatHistory', JSON.stringify(chatHistory.slice(-20)));
+  // Update sidebar selection
+  document.querySelectorAll('.side-agent').forEach(el => el.classList.remove('selected'));
+  const btn = document.getElementById(`agent-btn-${id}`);
+  if (btn) btn.classList.add('selected');
+
+  // Update chat header
+  updateChatHeader();
+
+  // Update quick chips
+  updateChips();
+
+  // Restore this agent's chat history
+  restoreChatMessages();
 }
 
-async function callGroq(message) {
-  try {
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, history: chatHistory })
-    });
-    const data = await res.json();
-    return data.reply;
-  } catch {
-    return "Connection error — make sure the local server is running at localhost:3000! 🔌";
+function updateChatHeader() {
+  const header = document.getElementById('chatHeader');
+  if (activeAgent === 'team') {
+    header.innerHTML = `
+      <div class="agent-chat-avatar" style="background:linear-gradient(135deg,#cc0000,#ff2020);box-shadow:0 6px 20px rgba(200,0,0,0.4)">🤖</div>
+      <div class="chat-bot-info">
+        <div class="chat-bot-name">Agent Team Assistant</div>
+        <div class="chat-bot-status"><div class="chat-bot-status-dot"></div> All 10 agents connected</div>
+      </div>`;
+  } else {
+    const a = AGENTS.find(x => x.id === activeAgent);
+    if (!a) return;
+    header.innerHTML = `
+      <div class="agent-chat-avatar" style="background:${a.color}22;border:2px solid ${a.color}55;font-size:22px">${a.icon}</div>
+      <div class="chat-bot-info" style="flex:1">
+        <div class="chat-bot-name" style="color:${a.color}">${a.name}</div>
+        <div class="chat-bot-status" style="color:${a.color}99"><div class="chat-bot-status-dot" style="background:${a.color}"></div> ${a.role} · Direct channel open</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div style="font-size:10px;font-weight:700;color:#444;background:#1a1a1a;padding:4px 10px;border-radius:50px;border:1px solid #2a2a2a" title="This agent remembers past conversations">🧠 Memory on</div>
+        <button onclick="clearAgentMemory('${a.id}')" style="font-size:10px;font-weight:700;color:#666;background:#1a1a1a;border:1px solid #2a2a2a;padding:4px 10px;border-radius:50px;cursor:pointer;font-family:var(--font)" title="Wipe this agent's memory">🗑 Clear memory</button>
+      </div>`;
   }
 }
 
-function addMsg(text, isUser = false, time = null) {
+const AGENT_CHIPS = {
+  team: [
+    { label:'🔍 Git status', msg:'Check git status of SowmithCuts' },
+    { label:'🚀 Push to GitHub', msg:'Push SowmithCuts to GitHub with message: latest updates' },
+    { label:'📄 Read file', msg:'Read the index.html of SowmithCuts' },
+    { label:'✨ New project', msg:'Create a new project called TestApp' },
+    { label:'📂 List files', msg:'List files in BiryaniTemptations' },
+    { label:'🤖 Agent status', msg:'What are all agents currently doing?' },
+  ],
+  architect: [
+    { label:'🧠 Plan SowmithCuts', msg:'Review SowmithCuts and give me a full improvement plan' },
+    { label:'🧠 Plan BiryaniTemptations', msg:'Review BiryaniTemptations and give me a full improvement plan' },
+    { label:'📋 List all projects', msg:'List all my projects and summarize what each one needs' },
+  ],
+  'frontend-lead': [
+    { label:'🎨 Improve hero', msg:'Read SowmithCuts index.html and improve the hero section' },
+    { label:'📱 Check mobile', msg:'Read SowmithCuts index.html and check the mobile responsiveness' },
+    { label:'✨ Add animation', msg:'Add a smooth fade-in animation to the menu items on BiryaniTemptations' },
+  ],
+  'frontend-support': [
+    { label:'🖌️ Fix CSS', msg:'Check SowmithCuts for any CSS issues or improvements' },
+    { label:'♿ Accessibility', msg:'Audit SowmithCuts for accessibility issues' },
+  ],
+  backend: [
+    { label:'⚙️ Check server', msg:'Read the AgentHub server.js and check for any issues' },
+    { label:'🗄️ Check APIs', msg:'List the API endpoints in AgentHub server.js' },
+  ],
+  devops: [
+    { label:'🔍 Status check', msg:'Check git status of SowmithCuts' },
+    { label:'🚀 Push SowmithCuts', msg:'Show git status of SowmithCuts then push to GitHub' },
+    { label:'🚀 Push BiryaniTemptations', msg:'Show git status of BiryaniTemptations then push to GitHub' },
+  ],
+  tester: [
+    { label:'🧪 Test SowmithCuts', msg:'Run a full audit of SowmithCuts and find all bugs' },
+    { label:'🧪 Test BiryaniTemptations', msg:'Run a full audit of BiryaniTemptations and find all bugs' },
+    { label:'🧪 Test AgentHub', msg:'Audit the AgentHub project for bugs and issues' },
+  ],
+  reviewer: [
+    { label:'🔍 Security review', msg:'Do a security audit of SowmithCuts' },
+    { label:'🔍 Review BiryaniTemptations', msg:'Do a code quality and security review of BiryaniTemptations' },
+  ],
+  fixer: [
+    { label:'🔧 Fix SowmithCuts', msg:'Read SowmithCuts index.html and fix any bugs you find' },
+    { label:'🔧 Fix BiryaniTemptations', msg:'Read BiryaniTemptations index.html and fix any bugs you find' },
+  ],
+  innovator: [
+    { label:'💡 Ideas for SowmithCuts', msg:'Analyze SowmithCuts and give me your top 5 improvement ideas' },
+    { label:'💡 Ideas for BiryaniTemptations', msg:'Analyze BiryaniTemptations and give me your top revenue ideas' },
+    { label:'💡 New project idea', msg:'What kind of new project should I build next?' },
+  ],
+  email: [
+    { label:'📧 Check forms', msg:'Read SowmithCuts and check the contact/booking form handling' },
+  ],
+};
+
+function updateChips() {
+  const chips = AGENT_CHIPS[activeAgent] || AGENT_CHIPS.team;
+  document.getElementById('quickChips').innerHTML = chips.map(c =>
+    `<button class="chip" onclick="quickSend('${c.msg.replace(/'/g,"\\'")}'">${c.label}</button>`
+  ).join('');
+}
+
+// ── MESSAGES ──────────────────────────────────────────────────
+function addMsg(text, isUser = false, time = null, steps = [], agentId = null) {
   const msgs = document.getElementById('messages');
   const now = time || new Date().toTimeString().slice(0,5);
   const el = document.createElement('div');
@@ -403,35 +483,52 @@ function addMsg(text, isUser = false, time = null) {
         <div class="msg-time">${now}</div>
       </div>`;
   } else {
+    const agent = agentId && agentId !== 'team' ? AGENTS.find(a => a.id === agentId) : null;
+    const avatarStyle = agent ? `background:${agent.color}22;border:1px solid ${agent.color}44` : '';
+    const avatarIcon = agent ? agent.icon : '🤖';
+    const nameColor = agent ? agent.color : '#cc0000';
+    const senderName = agent ? agent.name : 'Agent Team';
+    const borderColor = agent ? agent.color : '#cc0000';
+
+    const stepsHtml = steps.length ? `<div class="tool-steps">${steps.map(s => {
+      const ok = s.ok !== false;
+      return `<div class="tool-step ${ok?'ok':'err'}">
+        <div class="tool-icon">${toolIcon(s.tool)}</div>
+        <div class="tool-body">
+          <div class="tool-name">${s.tool.replace(/_/g,' ')}</div>
+          <div class="tool-result">${s.result || ''}</div>
+        </div>
+        <div class="tool-status ${ok?'ok':'err'}">${ok?'✓ done':'✗ error'}</div>
+      </div>`;
+    }).join('')}</div>` : '';
+
     el.innerHTML = `
-      <div class="msg-avatar bot-avatar-sm">🤖</div>
+      <div class="msg-avatar bot-avatar-sm" style="${avatarStyle}">${avatarIcon}</div>
       <div class="msg-body">
-        <div class="msg-sender">Agent Team</div>
-        <div class="msg-bubble">${formatResponse(text)}</div>
+        <div class="msg-sender" style="color:${nameColor}">${senderName}</div>
+        ${stepsHtml}
+        <div class="msg-bubble" style="border-left-color:${borderColor}">${formatResponse(text)}</div>
         <div class="msg-time">${now}</div>
       </div>`;
   }
-
   msgs.appendChild(el);
   msgs.scrollTop = msgs.scrollHeight;
-
-  // Persist to localStorage
-  const saved = JSON.parse(localStorage.getItem('chatMessages') || '[]');
-  saved.push({ text, isUser, time: now });
-  if (saved.length > 100) saved.splice(0, saved.length - 100);
-  localStorage.setItem('chatMessages', JSON.stringify(saved));
 }
 
 function showTyping() {
   const msgs = document.getElementById('messages');
+  const agent = activeAgent !== 'team' ? AGENTS.find(a => a.id === activeAgent) : null;
   const el = document.createElement('div');
   el.className = 'typing'; el.id = 'typing';
+  const avatarStyle = agent ? `background:${agent.color}22;border:1px solid ${agent.color}44` : '';
+  const avatarIcon = agent ? agent.icon : '🤖';
+  const borderColor = agent ? agent.color : '#cc0000';
   el.innerHTML = `
-    <div class="msg-avatar bot-avatar-sm">🤖</div>
-    <div class="typing-dots">
-      <div class="typing-dot"></div>
-      <div class="typing-dot"></div>
-      <div class="typing-dot"></div>
+    <div class="msg-avatar bot-avatar-sm" style="${avatarStyle}">${avatarIcon}</div>
+    <div class="typing-dots" style="border-left-color:${borderColor}">
+      <div class="typing-dot" style="background:${agent?.color||'#cc0000'}"></div>
+      <div class="typing-dot" style="background:${agent?.color||'#cc0000'}"></div>
+      <div class="typing-dot" style="background:${agent?.color||'#cc0000'}"></div>
     </div>`;
   msgs.appendChild(el);
   msgs.scrollTop = msgs.scrollHeight;
@@ -442,32 +539,54 @@ function removeTyping() {
   if (t) t.remove();
 }
 
+function restoreChatMessages() {
+  const msgs = document.getElementById('messages');
+  msgs.innerHTML = '';
+  const history = chatHistories[activeAgent] || [];
+  history.forEach(m => addMsg(m.text, m.isUser, m.time, m.steps || [], m.agentId));
+  if (history.length === 0) {
+    const agent = activeAgent !== 'team' ? AGENTS.find(a => a.id === activeAgent) : null;
+    const welcome = agent
+      ? `${agent.icon} **${agent.name}** online — direct channel open.\n\nI'm specialized for: ${agent.role}. What do you need?`
+      : `Hey there! 👋 I'm the Agent Hub assistant. Ask me anything or click an agent in the sidebar to talk to them directly.`;
+    setTimeout(() => addMsg(welcome, false, new Date().toTimeString().slice(0,5), [], activeAgent), 300);
+  }
+}
+
+// ── SEND MESSAGE ──────────────────────────────────────────────
 async function sendMsg() {
   const input = document.getElementById('chatInput');
   const text = input.value.trim();
   if (!text) return;
   input.value = '';
-  addMsg(text, true);
 
-  chatHistory.push({ role: 'user', content: text });
-  saveHistory();
+  addMsg(text, true);
+  const history = chatHistories[activeAgent];
+  history.push({ text, isUser: true, time: new Date().toTimeString().slice(0,5) });
 
   showTyping();
-  const reply = await callGroq(text);
-  removeTyping();
-  addMsg(reply);
 
-  chatHistory.push({ role: 'assistant', content: reply });
-  if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
-  saveHistory();
-}
-
-function clearChat() {
-  localStorage.removeItem('chatMessages');
-  localStorage.removeItem('chatHistory');
-  chatHistory = [];
-  document.getElementById('messages').innerHTML = '';
-  addMsg("Chat cleared! Ask me anything. 👋");
+  try {
+    const endpoint = activeAgent === 'team' ? '/api/chat' : `/api/agent/${activeAgent}`;
+    const groqHistory = history.slice(-6).filter(m => m.isUser !== undefined).map(m => ({
+      role: m.isUser ? 'user' : 'assistant',
+      content: m.text
+    }));
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, history: groqHistory })
+    });
+    const data = await res.json();
+    removeTyping();
+    const reply = data.reply || 'Done.';
+    const steps = data.steps || [];
+    addMsg(reply, false, null, steps, activeAgent);
+    history.push({ text: reply, isUser: false, time: new Date().toTimeString().slice(0,5), steps, agentId: activeAgent });
+  } catch {
+    removeTyping();
+    addMsg('Connection error — make sure the server is running at localhost:3000 🔌', false, null, [], activeAgent);
+  }
 }
 
 function quickSend(text) {
@@ -475,12 +594,26 @@ function quickSend(text) {
   sendMsg();
 }
 
-// Sidebar
+function clearChat() {
+  chatHistories[activeAgent] = [];
+  restoreChatMessages();
+}
+
+async function clearAgentMemory(agentId) {
+  try {
+    await fetch(`/api/agent/${agentId}/memory`, { method: 'DELETE' });
+    chatHistories[agentId] = [];
+    if (activeAgent === agentId) restoreChatMessages();
+    updateChatHeader();
+  } catch {}
+}
+
+// ── SIDEBAR ───────────────────────────────────────────────────
 function renderSidebar() {
   document.getElementById('sidebarAgents').innerHTML = AGENTS.map(a => {
     const dc = a.status === 'active' ? 'dot-active' : a.status === 'working' ? 'dot-working' : 'dot-idle';
-    return `<div class="side-agent" style="--ac:${a.color}">
-      <div class="side-avatar" style="--ac:${a.color};background:${a.color}18;border:2px solid ${a.color}30">${a.icon}</div>
+    return `<div class="side-agent" id="agent-btn-${a.id}" onclick="selectAgent('${a.id}')">
+      <div class="side-avatar" style="background:${a.color}18;border:2px solid ${a.color}30">${a.icon}</div>
       <div style="flex:1;min-width:0">
         <div class="side-name">${a.name}</div>
         <div class="side-role">${a.role}</div>
@@ -490,18 +623,12 @@ function renderSidebar() {
   }).join('');
 }
 
-// Welcome message or restore saved chat
+// ── INIT ──────────────────────────────────────────────────────
 window.addEventListener('load', () => {
   renderSidebar();
-
-  const saved = JSON.parse(localStorage.getItem('chatMessages') || '[]');
-  if (saved.length > 0) {
-    saved.forEach(m => addMsg(m.text, m.isUser, m.time));
-  } else {
-    setTimeout(() => {
-      addMsg(`Hey there! 👋 I'm the Agent Hub assistant — your window into what all 10 agents are doing right now.\n\nWe're currently deep in the **Clover payment integration** for Biryani Temptations! The Backend Agent is building the Supabase Edge Function, the Frontend Lead is embedding the payment form, and the Tester is running E2E tests.\n\nAsk me anything — I've got the full picture! 🚀`, false, new Date().toTimeString().slice(0,5));
-    }, 500);
-  }
+  updateChatHeader();
+  updateChips();
+  restoreChatMessages();
 });
 </script>
 </body>

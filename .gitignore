@@ -1,2 +1,7 @@
 .env
 node_modules/
+.vercel/
+logs/
+memory/
+*.log
+.DS_Store

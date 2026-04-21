@@ -481,11 +481,11 @@
   </div>
   <div class="stat-card">
     <div class="stat-icon" style="background:linear-gradient(135deg,#1c1c1c,#161616)">✅</div>
-    <div><div class="stat-value" id="stat-tasks">24</div><div class="stat-label">Tasks Done</div></div>
+    <div><div class="stat-value" id="stat-tasks">0</div><div class="stat-label">Tasks Done</div></div>
   </div>
   <div class="stat-card">
     <div class="stat-icon" style="background:linear-gradient(135deg,#1c1c1c,#161616)">🔌</div>
-    <div><div class="stat-value">5/5</div><div class="stat-label">Integrations</div></div>
+    <div><div class="stat-value" id="stat-integrations">—</div><div class="stat-label">Integrations</div></div>
   </div>
   <div class="stat-card">
     <div class="stat-icon" style="background:linear-gradient(135deg,#1c1c1c,#161616)">⚡</div>
@@ -493,7 +493,7 @@
   </div>
   <div class="stat-card">
     <div class="stat-icon" style="background:linear-gradient(135deg,#1c1c1c,#161616)">🧠</div>
-    <div><div class="stat-value">12</div><div class="stat-label">Vault Entries</div></div>
+    <div><div class="stat-value" id="stat-vault">—</div><div class="stat-label">Vault Entries</div></div>
   </div>
 </div>
 
@@ -522,7 +522,7 @@
   <div class="panel">
     <div class="panel-head">
       <div class="panel-title">🔌 Integrations</div>
-      <div class="panel-badge" style="background:linear-gradient(135deg,#cc0000,#ff2020);color:#fff;border-color:#ff2020;box-shadow:0 0 12px rgba(204,0,0,0.5)">All Connected</div>
+      <div class="panel-badge" id="int-badge">Loading…</div>
     </div>
     <div style="padding:10px 10px 0; flex-shrink:0" id="integrationsList"></div>
     <div class="panel-head" style="margin-top:2px">
@@ -547,123 +547,143 @@ const _sb = supabase.createClient(
 );
 
 const AGENTS = [
-  { id:'architect', icon:'🧠', name:'Architect', role:'The Brain', color:'#7c3aed', status:'active',
-    desc:'Plans every project before a single line is written. Delegates tasks to the right agents and keeps everything aligned.',
-    skills:['System design','API contracts','DB schema','Scalability','Three.js arch','Prompt engineering','Performance budgeting'] },
-  { id:'frontend-lead', icon:'🎨', name:'Frontend Lead', role:'Visual & Interactive', color:'#db2777', status:'active',
-    desc:'Owns all visual and interactive frontend code. Works closely with Frontend Support on heavy workloads.',
-    skills:['Three.js','WebGL','GLSL shaders','GSAP','React/Next.js','Tailwind','Core Web Vitals','Component arch'] },
-  { id:'frontend-support', icon:'🖌️', name:'Frontend Support', role:'UI & Assets', color:'#9333ea', status:'idle',
-    desc:'Assists Frontend Lead when workload is high. Handles components, styling, and asset optimization independently.',
-    skills:['CSS animations','SVG','Framer Motion','Lazy loading','Image optimization','Mobile-first','Cross-browser'] },
-  { id:'backend', icon:'⚙️', name:'Backend Agent', role:'APIs & Databases', color:'#d97706', status:'active',
-    desc:'Builds and maintains all server-side logic, databases, and APIs. Currently working on Clover payment integration.',
-    skills:['Node.js','Express','REST/GraphQL','PostgreSQL','MongoDB','Redis','JWT/OAuth','Stripe'] },
-  { id:'email', icon:'📧', name:'Email & Comms', role:'All Notifications', color:'#dc2626', status:'idle',
-    desc:'Handles all email sending, templates, and automation at scale. Replacing EmailJS with SendGrid.',
-    skills:['SendGrid','Nodemailer','MJML templates','Transactional flows','Newsletter automation','Webhooks'] },
-  { id:'devops', icon:'🚀', name:'GitHub DevOps', role:'Deploy & Version Control', color:'#059669', status:'idle',
-    desc:'Connects directly to GitHub. Handles all deployments, version control, and pipeline automation.',
-    skills:['GitHub API','Auto commits/PRs','GitHub Actions','Vercel','Netlify','CI/CD','Changelogs'] },
-  { id:'tester', icon:'🧪', name:'Tester Agent', role:'Continuous Testing', color:'#2563eb', status:'active',
-    desc:'Runs tests continuously on all code. Reports failures immediately to the Fixer Agent.',
-    skills:['Jest','Playwright','Cypress','Unit/Integration/E2E','Visual regression','Lighthouse','A11y auditing'] },
-  { id:'reviewer', icon:'🔍', name:'Reviewer & Checker', role:'Code Quality', color:'#ea580c', status:'active',
-    desc:'Reviews every line of code produced by any agent. Flags issues in real time.',
-    skills:['ESLint','Prettier','Security scanning','Dependency auditing','OWASP','Design patterns'] },
-  { id:'fixer', icon:'🔧', name:'Fixer Agent', role:'Bug Resolution', color:'#e11d48', status:'working',
-    desc:'Receives bug reports from Tester and Reviewer agents. Diagnoses and fixes issues autonomously.',
-    skills:['Auto debugging','Error patterns','Stack traces','Hot-fix gen','Memory leak detection','Perf bottlenecks'] },
-  { id:'innovator', icon:'💡', name:'Innovator Thinker', role:'Research & Ideas', color:'#7c3aed', status:'active',
-    desc:'Constantly researches ways to improve projects and generate revenue. Generates weekly ideas reports.',
-    skills:['Market research','Competitor analysis','Monetization','UX innovation','WebXR','Feature ideation','Growth hacking'] },
+  { id:'architect',        icon:'🧠', name:'Architect',        role:'The Brain',            color:'#7c3aed',
+    desc:'Plans every project before a single line is written. Delegates tasks to the right agents.',
+    skills:['System design','API contracts','DB schema','Scalability','Prompt engineering','Performance budgeting'] },
+  { id:'frontend-lead',    icon:'🎨', name:'Frontend Lead',    role:'Visual & Interactive', color:'#db2777',
+    desc:'Owns all visual and interactive frontend code.',
+    skills:['Three.js','WebGL','GSAP','React/Next.js','Tailwind','Core Web Vitals','Component arch'] },
+  { id:'frontend-support', icon:'🖌️', name:'Frontend Support', role:'UI & Assets',          color:'#9333ea',
+    desc:'Handles components, styling, and asset optimization.',
+    skills:['CSS animations','SVG','Framer Motion','Lazy loading','Image optimization','Mobile-first'] },
+  { id:'backend',          icon:'⚙️', name:'Backend Agent',    role:'APIs & Databases',     color:'#d97706',
+    desc:'Builds and maintains all server-side logic, databases, and APIs.',
+    skills:['Node.js','Express','REST/GraphQL','PostgreSQL','Redis','JWT/OAuth'] },
+  { id:'email',            icon:'📧', name:'Email & Comms',    role:'All Notifications',    color:'#dc2626',
+    desc:'Handles all email templates and notification systems.',
+    skills:['SendGrid','Nodemailer','MJML templates','Transactional flows','Webhooks'] },
+  { id:'devops',           icon:'🚀', name:'GitHub DevOps',    role:'Deploy & Version Control', color:'#059669',
+    desc:'Handles all deployments, version control, and pipeline automation.',
+    skills:['GitHub API','Auto commits/PRs','GitHub Actions','Vercel','Netlify','CI/CD'] },
+  { id:'tester',           icon:'🧪', name:'Tester Agent',     role:'Continuous Testing',   color:'#2563eb',
+    desc:'Audits code for bugs and reports findings to Fixer Agent.',
+    skills:['Jest','Playwright','Cypress','Unit/Integration/E2E','Lighthouse','A11y auditing'] },
+  { id:'reviewer',         icon:'🔍', name:'Reviewer & Checker', role:'Code Quality',       color:'#ea580c',
+    desc:'Reviews code for security vulnerabilities and quality issues.',
+    skills:['ESLint','Prettier','Security scanning','Dependency auditing','OWASP'] },
+  { id:'fixer',            icon:'🔧', name:'Fixer Agent',      role:'Bug Resolution',       color:'#e11d48',
+    desc:'Receives bug reports and fixes issues surgically.',
+    skills:['Auto debugging','Error patterns','Stack traces','Hot-fix gen','Memory leak detection'] },
+  { id:'innovator',        icon:'💡', name:'Innovator Thinker', role:'Research & Ideas',    color:'#7c3aed',
+    desc:'Researches ways to improve projects and generate new ideas.',
+    skills:['Market research','Competitor analysis','Monetization','UX innovation','Growth hacking'] },
 ];
 
-const INTEGRATIONS = [
-  { icon:'🐙', name:'GitHub', desc:'Auto commits & deployments', color:'#24292f', bg:'#f0f0f0' },
-  { icon:'📨', name:'SendGrid', desc:'Email & notifications', color:'#1a82e2', bg:'#e8f4ff' },
-  { icon:'▲', name:'Vercel', desc:'Auto deployment pipeline', color:'#000', bg:'#f5f5f5' },
-  { icon:'🧠', name:'Obsidian Vault', desc:'Agent memory & knowledge', color:'#7c3aed', bg:'#ede9fe' },
-  { icon:'🔍', name:'Web Search', desc:'Live research access', color:'#059669', bg:'#d1fae5' },
-];
+// Live status from /api/stats — keyed by agent id
+let agentStatuses = {};
+let feedCount = 0;
 
-const VAULT = [
-  { title:'💡 AR Menu Preview (WebXR)', body:'WebXR stable in Chrome/Safari. Recommend piloting AR dish previews for premium items. Est: 2 weeks.', meta:'Innovator · 5m ago' },
-  { title:'🧠 Clover Integration Plan', body:'Using Payments.js + Supabase Edge Function. Sandbox creds pending. Architect approved.', meta:'Architect · 12m ago' },
-  { title:'🔍 OWASP Scan Complete', body:'0 critical, 1 medium (missing CSP header) — assigned to Fixer for resolution.', meta:'Reviewer · 30m ago' },
-  { title:'📊 Market Research', body:'Top 3 competitors lack online ordering. Big opportunity for real-time catering booking.', meta:'Innovator · 1h ago' },
-];
+// ── RENDER AGENTS (real data from /api/stats) ──
+async function renderAgents() {
+  try {
+    const res = await fetch('/api/stats');
+    const data = await res.json();
+    agentStatuses = data.agents || {};
+    document.getElementById('stat-tasks').textContent = data.tasksDone ?? 0;
 
-const MSGS = {
-  architect:['Breaking project into subtasks and assigning to agents','Reviewing API contract for payment endpoint','Planning DB schema for orders table','Evaluating performance budget across all modules'],
-  'frontend-lead':['Implementing GSAP scroll animation for hero section','Optimizing Three.js render loop → targeting 60fps','Building responsive checkout card component','Writing GLSL shader for background effect'],
-  'frontend-support':['Optimizing hero image → reducing to 180kb','Fixing cross-browser flexbox issue on Safari','Adding Framer Motion enter animation to nav','Running Lighthouse audit — score: 94'],
-  backend:['Building Supabase Edge Function for Clover charge','Setting up PostgreSQL orders schema','Implementing JWT auth middleware','Testing charge-order endpoint with sandbox token'],
-  email:['Designing MJML order confirmation template','Configuring SendGrid domain authentication','Setting up transactional email flow for orders','Testing deliverability — SPF/DKIM verified'],
-  devops:['Auto-committing stable frontend changes','Opening PR: feat/clover-payment-integration','Running GitHub Actions CI pipeline','Deploying preview branch to Vercel'],
-  tester:['Running Playwright E2E suite — 47 tests passed ✅','Detected visual regression in checkout modal','Running Lighthouse performance audit','API integration test — all endpoints healthy'],
-  reviewer:['ESLint scan complete — 0 errors, 3 warnings','Security audit: no critical vulnerabilities','Flagging unused dependency in package.json','OWASP check — SQL injection patterns scanned'],
-  fixer:['Resolved memory leak in event listener cleanup','Fixed null check on user session object','Hot-fix applied to checkout error handler','Performance fix: API 340ms → 80ms ⚡'],
-  innovator:['Research: competitors missing loyalty programs 💡','Idea: AR menu preview using WebXR — saving to vault','Market analysis: catering peaks Fri–Sun','New idea: SMS notifications via Twilio'],
-};
-
-let feedCount = 0, taskCount = 0, currentTab = 'pending';
-
-const TASKS = {
-  pending: [],
-  progress: [],
-  done: []
-};
-
-// ── RENDER AGENTS ──
-function renderAgents() {
-  const list = document.getElementById('agentList');
-  const statuses = {};
-  AGENTS.forEach(a => statuses[a.id] = a.status);
-
-  list.innerHTML = AGENTS.map(a => {
-    const msgs = MSGS[a.id];
-    const task = a.status !== 'idle' ? msgs[Math.floor(Math.random() * Math.min(msgs.length, 3))] : 'Awaiting task…';
-    const sc = a.status === 'active' ? 'status-active' : a.status === 'working' ? 'status-working' : 'status-idle';
-    return `<div class="agent-card" style="--agent-color:${a.color}" onclick="openModal('${a.id}')">
-      <div class="agent-row1">
-        <div class="agent-avatar" style="--agent-color:${a.color}">${a.icon}</div>
-        <div class="agent-info">
-          <div class="agent-name">${a.name}</div>
-          <div class="agent-role">${a.role}</div>
+    const list = document.getElementById('agentList');
+    list.innerHTML = AGENTS.map(a => {
+      const info = agentStatuses[a.id] || {};
+      const status = info.status || 'idle';
+      const lastTask = info.lastTask || 'Waiting for a task…';
+      const sc = status === 'working' ? 'status-working' : status === 'active' ? 'status-active' : 'status-idle';
+      return `<div class="agent-card" style="--agent-color:${a.color}" onclick="openModal('${a.id}')">
+        <div class="agent-row1">
+          <div class="agent-avatar" style="--agent-color:${a.color}">${a.icon}</div>
+          <div class="agent-info">
+            <div class="agent-name">${a.name}</div>
+            <div class="agent-role">${a.role}</div>
+          </div>
+          <div class="status-pill ${sc}">${status}</div>
         </div>
-        <div class="status-pill ${sc}">${a.status}</div>
-      </div>
-      <div class="agent-task-text">${task}</div>
-    </div>`;
-  }).join('');
+        <div class="agent-task-text">${lastTask}</div>
+      </div>`;
+    }).join('');
 
-  const active = AGENTS.filter(a => a.status === 'active' || a.status === 'working').length;
-  document.getElementById('agent-count').textContent = `${active} Active`;
-  document.getElementById('stat-active').textContent = active;
+    const activeCount = Object.values(agentStatuses).filter(s => s.status && s.status !== 'idle').length;
+    document.getElementById('agent-count').textContent = `${activeCount} Active`;
+    document.getElementById('stat-active').textContent = activeCount;
+  } catch (e) {
+    console.error('renderAgents:', e);
+  }
 }
 
-// ── RENDER INTEGRATIONS ──
-function renderIntegrations() {
-  document.getElementById('integrationsList').innerHTML = INTEGRATIONS.map(i => `
-  <div class="integration-card">
-    <div class="integration-icon-wrap" style="background:${i.bg}">${i.icon}</div>
-    <div class="integration-details">
-      <div class="integration-name">${i.name}</div>
-      <div class="integration-status"><div class="int-dot"></div> Connected</div>
-    </div>
-    <div class="int-check">✓</div>
-  </div>`).join('');
+// ── RENDER INTEGRATIONS (real check from /api/integrations) ──
+async function renderIntegrations() {
+  try {
+    const res = await fetch('/api/integrations');
+    const integrations = await res.json();
+
+    const connectedCount = integrations.filter(i => i.connected).length;
+    const total = integrations.length;
+
+    document.getElementById('stat-integrations').textContent = `${connectedCount}/${total}`;
+    const badge = document.getElementById('int-badge');
+    if (connectedCount === total) {
+      badge.textContent = 'All Connected';
+      badge.style.cssText = 'background:linear-gradient(135deg,#cc0000,#ff2020);color:#fff;border-color:#ff2020;box-shadow:0 0 12px rgba(204,0,0,0.5)';
+    } else {
+      badge.textContent = `${connectedCount}/${total} Connected`;
+      badge.style.cssText = '';
+    }
+
+    document.getElementById('integrationsList').innerHTML = integrations.map(i => {
+      const dotStyle = i.connected
+        ? 'background:#ff2020;box-shadow:0 0 6px #ff2020'
+        : 'background:#555;box-shadow:none;animation:none';
+      const statusText = i.connected ? `<div class="int-dot" style="${dotStyle}"></div> Connected` : '✗ Not connected';
+      const statusColor = i.connected ? '#ff2020' : '#666';
+      const checkMark = i.connected
+        ? `<div class="int-check">✓</div>`
+        : `<div style="width:26px;height:26px;border-radius:50%;background:#1c1c1c;border:1px solid #333;display:flex;align-items:center;justify-content:center;color:#555;font-size:13px;font-weight:900">✕</div>`;
+      return `<div class="integration-card">
+        <div class="integration-icon-wrap">${i.icon}</div>
+        <div class="integration-details">
+          <div class="integration-name">${i.name}</div>
+          <div class="integration-status" style="color:${statusColor}">${statusText}</div>
+          ${i.detail ? `<div style="font-size:9px;color:#555;margin-top:2px">${i.detail}</div>` : ''}
+        </div>
+        ${checkMark}
+      </div>`;
+    }).join('');
+  } catch (e) {
+    document.getElementById('integrationsList').innerHTML = '<div style="padding:12px;color:#555;font-size:12px">Could not load integrations</div>';
+  }
 }
 
-// ── RENDER VAULT ──
-function renderVault() {
-  document.getElementById('vaultList').innerHTML = VAULT.map(v => `
-  <div class="vault-card">
-    <div class="vault-title">${v.title}</div>
-    <div class="vault-body">${v.body}</div>
-    <div class="vault-meta">${v.meta}</div>
-  </div>`).join('');
+// ── RENDER VAULT (real memory files from /api/vault) ──
+async function renderVault() {
+  try {
+    const res = await fetch('/api/vault');
+    const entries = await res.json();
+
+    document.getElementById('stat-vault').textContent = entries.length;
+
+    if (!entries.length) {
+      document.getElementById('vaultList').innerHTML =
+        '<div style="padding:16px;color:#444;font-size:11px;text-align:center;line-height:1.6">No memory yet.<br>Talk to an agent to build the vault.</div>';
+      return;
+    }
+
+    document.getElementById('vaultList').innerHTML = entries.map(v => `
+      <div class="vault-card">
+        <div class="vault-title">${v.agent}</div>
+        <div class="vault-body">${v.preview}</div>
+        <div class="vault-meta">${v.messageCount} messages · ${v.lastUpdated}</div>
+      </div>`).join('');
+  } catch (e) {
+    document.getElementById('vaultList').innerHTML = '<div style="padding:12px;color:#555;font-size:12px">Could not load vault</div>';
+  }
 }
 
 // ── FEED ──
@@ -696,27 +716,26 @@ function addMsg(agentId, msg, level = 'info', time = null) {
   document.getElementById('stat-msgs').textContent = feedCount;
 }
 
-// ── LOG TO SUPABASE (real activity) ──────────────────────────
-async function logActivity(agentId, agentName, message, level = 'info') {
-  try {
-    await fetch('/api/activity', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ agent_id: agentId, agent_name: agentName, message, level })
-    });
-  } catch {}
-}
-
 // ── LOAD REAL ACTIVITY FROM SUPABASE ─────────────────────────
 async function loadRealActivity() {
+  const feed = document.getElementById('feed');
   try {
     const res = await fetch('/api/activity');
     const rows = await res.json();
     if (Array.isArray(rows) && rows.length > 0) {
-      // Show oldest first
-      rows.reverse().forEach(r => addMsg(r.agent_id, r.message, r.level, new Date(r.created_at).toTimeString().slice(0,5)));
+      rows.slice().reverse().forEach(r =>
+        addMsg(r.agent_id, r.message, r.level || 'info', new Date(r.created_at).toTimeString().slice(0,5))
+      );
+    } else {
+      feed.innerHTML = `<div style="padding:24px 16px;color:#444;font-size:12px;font-weight:600;text-align:center;line-height:1.8">
+        No activity yet.<br>Talk to an agent in the Chat tab to see real work here.
+      </div>`;
     }
-  } catch {}
+  } catch {
+    feed.innerHTML = `<div style="padding:24px 16px;color:#444;font-size:12px;text-align:center">
+      Activity feed unavailable — is the server running?
+    </div>`;
+  }
 }
 
 // ── SUBSCRIBE TO REALTIME NEW ENTRIES ────────────────────────
@@ -724,56 +743,43 @@ function subscribeRealtime() {
   _sb.channel('agent-activity')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'agent_activity' }, payload => {
       const r = payload.new;
-      addMsg(r.agent_id, r.message, r.level, new Date(r.created_at).toTimeString().slice(0,5));
+      // Remove empty-state placeholder if present
+      const feed = document.getElementById('feed');
+      if (feed.querySelector('div[style]')) feed.innerHTML = '';
+      addMsg(r.agent_id, r.message, r.level || 'info', new Date(r.created_at).toTimeString().slice(0,5));
     })
     .subscribe();
-}
-
-// ── LOAD REAL TASKS FROM SUPABASE ────────────────────────────
-async function loadRealTasks() {
-  try {
-    const res = await fetch('/api/tasks');
-    const rows = await res.json();
-    if (Array.isArray(rows) && rows.length > 0) {
-      TASKS.pending = rows.filter(r => r.status === 'pending').map(r => ({ name: r.title, agent: r.agent_name, id: r.id }));
-      TASKS.progress = rows.filter(r => r.status === 'progress').map(r => ({ name: r.title, agent: r.agent_name, id: r.id }));
-      TASKS.done = rows.filter(r => r.status === 'done').map(r => ({ name: r.title, agent: r.agent_name, id: r.id }));
-      const doneCount = TASKS.done.length;
-      document.getElementById('stat-tasks').textContent = doneCount;
-      taskCount = doneCount;
-      renderTasks(currentTab);
-    }
-  } catch {}
-}
-
-function startFeed() {
-  // First load real data from Supabase
-  loadRealActivity();
-  subscribeRealtime();
-  loadRealTasks();
-
 }
 
 // ── MODAL ──
 function openModal(id) {
   const a = AGENTS.find(x => x.id === id);
   if (!a) return;
-  const sc = a.status === 'active' ? 'status-active' : a.status === 'working' ? 'status-working' : 'status-idle';
+  const info = agentStatuses[id] || {};
+  const status = info.status || 'idle';
+  const lastTask = info.lastTask || 'No tasks run yet';
+  const sc = status === 'working' ? 'status-working' : status === 'active' ? 'status-active' : 'status-idle';
+
   document.getElementById('modalBox').innerHTML = `
     <button class="modal-close" onclick="closeModal()">✕</button>
     <div class="modal-agent-head">
       <div class="modal-avatar" style="background:${a.color}22;border:3px solid ${a.color}33;border-radius:16px">${a.icon}</div>
       <div>
         <div class="modal-name">${a.name}</div>
-        <div class="modal-role">${a.role} · <span class="status-pill ${sc}" style="font-size:10px">${a.status}</span></div>
+        <div class="modal-role">${a.role} · <span class="status-pill ${sc}" style="font-size:10px">${status}</span></div>
       </div>
     </div>
     <div class="modal-desc">${a.desc}</div>
     <div class="modal-section-title">Skills</div>
     <div class="skills-wrap">${a.skills.map(s => `<span class="skill-chip" style="background:${a.color}12;color:${a.color};border-color:${a.color}25">${s}</span>`).join('')}</div>
     <div style="margin-top:16px">
-      <div class="modal-section-title">Recent Messages</div>
-      ${MSGS[id].slice(0,3).map(m => `<div style="font-size:12px;font-weight:600;color:#999;padding:6px 0;border-bottom:1px solid rgba(204,0,0,0.15)">› ${m}</div>`).join('')}
+      <div class="modal-section-title">Last Task</div>
+      <div style="font-size:12px;font-weight:600;color:#999;padding:6px 0">› ${lastTask}</div>
+      <div style="margin-top:10px">
+        <a href="chat.html?agent=${id}" style="display:inline-block;padding:8px 18px;background:linear-gradient(135deg,#cc0000,#ff2020);color:#fff;text-decoration:none;border-radius:50px;font-size:12px;font-weight:800;box-shadow:0 4px 14px rgba(204,0,0,0.4)">
+          💬 Chat with ${a.name}
+        </a>
+      </div>
     </div>`;
   document.getElementById('modalBg').classList.add('open');
 }
@@ -781,23 +787,21 @@ function openModal(id) {
 function closeModal() { document.getElementById('modalBg').classList.remove('open'); }
 function maybeClose(e) { if (e.target === document.getElementById('modalBg')) closeModal(); }
 
-// ── TASKS ──
-function renderTasks(tab) {
-  currentTab = tab;
-  const items = TASKS[tab] || [];
-  document.getElementById('taskCount') && (document.getElementById('taskCount').textContent = items.length);
-}
-
 // ── CLOCK ──
 setInterval(() => {
   document.getElementById('clock').textContent = new Date().toTimeString().slice(0,8);
 }, 1000);
 
 // ── INIT ──
-renderAgents();
-renderIntegrations();
-renderVault();
-startFeed();
+async function init() {
+  await Promise.all([renderAgents(), renderIntegrations(), renderVault()]);
+  await loadRealActivity();
+  subscribeRealtime();
+  // Refresh agent statuses every 30s (picks up changes from chat sessions)
+  setInterval(renderAgents, 30000);
+}
+
+init();
 </script>
 </body>
 </html>
