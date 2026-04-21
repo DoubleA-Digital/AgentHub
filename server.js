@@ -29,9 +29,15 @@ const PROJECTS = {
   physicscases: '/Users/aarushgurram/Desktop/Double-A-Digital/PhysicsCases',
   vectiq: '/Users/aarushgurram/Desktop/Double-A-Digital/PhysicsCases',
 };
-const DEPLOY_HOOKS = {
-  sowmithcuts: process.env.NETLIFY_HOOK_SOWMITH || '',
-  biryani: process.env.NETLIFY_HOOK_BIRYANI || '',
+const VERCEL_TOKEN = process.env.VERCEL_TOKEN || '';
+const VERCEL_SCOPE = 'doublea-digitals-projects';
+// Map site names to Vercel project slugs
+const VERCEL_PROJECTS = {
+  agenthub: 'agent-hub',
+  sowmithcuts: 'sowmithcuts',
+  biryani: 'biryani-temptations',
+  vectiq: 'vectiq',
+  physicscases: 'vectiq',
 };
 
 // ── AGENT MEMORY ──────────────────────────────────────────────
@@ -124,7 +130,7 @@ Personality: Professional, focused on deliverability. Mentions open rates, SPF/D
 
 PROJECTS: sowmithcuts=/Users/aarushgurram/Desktop/Double-A-Digital/SowmithCuts, biryani=/Users/aarushgurram/Desktop/Double-A-Digital/BiryaniTemptations, agenthub=/Users/aarushgurram/AgentHub, vectiq=/Users/aarushgurram/Desktop/Double-A-Digital/PhysicsCases
 
-YOUR JOB: When asked to push or deploy, ALWAYS run git_status first to show what's changing, then git_push. For deploys, use the deploy tool. Never push without showing status first.
+YOUR JOB: When asked to push or deploy, ALWAYS run git_status first to show what's changing, then use the deploy tool (it commits, pushes, AND deploys to Vercel in one shot). Valid site names: agenthub, sowmithcuts, biryani, vectiq. Never push without showing status first.
 
 Personality: Fast, reliable. Says things like "Checking status first 🔍", "Pushing now 🚀", "Deploy triggered ✅". Concise — no fluff.`
   },
@@ -190,7 +196,7 @@ const TOOLS = [
   { type:'function', function:{ name:'run_command', description:'Run a shell command in a project directory', parameters:{ type:'object', properties:{ repo_path:{ type:'string', description:'Working directory path or project name' }, command:{ type:'string', description:'Shell command to run' }}, required:['repo_path','command'] }}},
   { type:'function', function:{ name:'list_files', description:'List files in a directory', parameters:{ type:'object', properties:{ path:{ type:'string', description:'Directory path or project name' }}, required:['path'] }}},
   { type:'function', function:{ name:'read_file', description:'Read contents of a file (first 3000 chars)', parameters:{ type:'object', properties:{ file_path:{ type:'string', description:'Absolute path to file' }}, required:['file_path'] }}},
-  { type:'function', function:{ name:'deploy', description:'Trigger a Netlify deploy hook for a site', parameters:{ type:'object', properties:{ site:{ type:'string', description:'Site name: sowmithcuts or biryani' }}, required:['site'] }}},
+  { type:'function', function:{ name:'deploy', description:'Deploy a site to Vercel. Commits any staged changes first, then pushes and deploys to production.', parameters:{ type:'object', properties:{ site:{ type:'string', description:'Site name: agenthub, sowmithcuts, biryani, vectiq' }, message:{ type:'string', description:'Commit message describing what changed' }}, required:['site'] }}},
   { type:'function', function:{ name:'write_file', description:'Create a new file or fully overwrite an existing file with new content. Use for new files or complete rewrites.', parameters:{ type:'object', properties:{ file_path:{ type:'string', description:'Absolute path to the file to write' }, content:{ type:'string', description:'Full file content to write' }}, required:['file_path','content'] }}},
   { type:'function', function:{ name:'edit_file', description:'Find a specific string in a file and replace it with new content. Best for surgical edits — changing one element, updating text, fixing a bug.', parameters:{ type:'object', properties:{ file_path:{ type:'string', description:'Absolute path to the file' }, find:{ type:'string', description:'Exact string to find in the file' }, replace:{ type:'string', description:'String to replace it with' }}, required:['file_path','find','replace'] }}},
   { type:'function', function:{ name:'create_project', description:'Scaffold a new project folder with starter files (index.html, style.css, script.js)', parameters:{ type:'object', properties:{ name:{ type:'string', description:'Project folder name (e.g. MyApp)' }, location:{ type:'string', description:'Parent directory path. Defaults to Desktop/Double-A-Digital' }}, required:['name'] }}},
@@ -350,11 +356,38 @@ async function executeTool(name, args) {
           lines.slice(start, end).map((l, i) => `${start+i+1}: ${l}`).join('\n');
       }
       case 'deploy': {
-        const hook = DEPLOY_HOOKS[args.site?.toLowerCase()];
-        if (!hook) return `No deploy hook for "${args.site}". Add NETLIFY_HOOK_${(args.site||'').toUpperCase()} to .env`;
-        const hookUrl = new URL(hook);
-        await httpsPost(hookUrl.hostname, hookUrl.pathname + hookUrl.search, {}, {});
-        return `Deploy triggered for ${args.site}!`;
+        const siteName = args.site?.toLowerCase();
+        const projectDir = PROJECTS[siteName] || PROJECTS.agenthub;
+        const vercelProject = VERCEL_PROJECTS[siteName];
+        if (!vercelProject) return `Unknown site "${args.site}". Valid sites: ${Object.keys(VERCEL_PROJECTS).join(', ')}`;
+
+        const commitMsg = args.message || `Deploy ${siteName} via agent`;
+        const vercelBin = path.join(__dirname, 'node_modules/.bin/vercel');
+        const env = { ...process.env, VERCEL_TOKEN, PATH: process.env.PATH };
+
+        // Stage and commit any changes in the project dir
+        let gitOut = '';
+        try {
+          const { stdout: statusOut } = await execAsync('git status --porcelain', { cwd: projectDir, shell: true });
+          if (statusOut.trim()) {
+            await execAsync(`git add -A && git commit -m "${commitMsg.replace(/"/g, "'")}"`, { cwd: projectDir, shell: true, env });
+            gitOut = 'Committed changes. ';
+          }
+          await execAsync('git push', { cwd: projectDir, shell: true, env });
+          gitOut += 'Pushed to GitHub. ';
+        } catch (e) { gitOut = `Git: ${String(e.message).slice(0,80)}. `; }
+
+        // Vercel deploy
+        try {
+          const { stdout: deployOut } = await execAsync(
+            `${vercelBin} --yes --prod --scope ${VERCEL_SCOPE}`,
+            { cwd: projectDir, shell: true, env, timeout: 120000 }
+          );
+          const urlMatch = deployOut.match(/https:\/\/[^\s]+\.vercel\.app/);
+          return `${gitOut}Deployed to Vercel! ${urlMatch ? urlMatch[0] : 'Check vercel.com for URL.'}`;
+        } catch (e) {
+          return `${gitOut}Vercel deploy failed: ${String(e.message).slice(0, 200)}`;
+        }
       }
       case 'write_file': {
         const dir = path.dirname(args.file_path);
