@@ -13,7 +13,7 @@ try {
   });
 } catch (_) {}
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const GROQ_KEY = process.env.GROQ_KEY || '';
 const SB_URL = process.env.SB_URL || 'https://esogrnjilzxcmvgpieib.supabase.co';
 const SB_KEY = process.env.SB_KEY || '';
