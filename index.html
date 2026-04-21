@@ -450,7 +450,14 @@
   <div class="modal-box" id="modalBox"></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+// ── SUPABASE REALTIME CLIENT ──────────────────────────────────
+const _sb = supabase.createClient(
+  'https://esogrnjilzxcmvgpieib.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzb2dybmppbHp4Y212Z3BpZWliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MTE3MDQsImV4cCI6MjA4OTk4NzcwNH0.x8KJldScjb2VsC-CGbPknOLppkozjjfhbbX9zwiYh_A'
+);
+
 const AGENTS = [
   { id:'architect', icon:'🧠', name:'Architect', role:'The Brain', color:'#7c3aed', status:'active',
     desc:'Plans every project before a single line is written. Delegates tasks to the right agents and keeps everything aligned.',
@@ -512,7 +519,13 @@ const MSGS = {
   innovator:['Research: competitors missing loyalty programs 💡','Idea: AR menu preview using WebXR — saving to vault','Market analysis: catering peaks Fri–Sun','New idea: SMS notifications via Twilio'],
 };
 
-let feedCount = 0, taskCount = 24;
+let feedCount = 0, taskCount = 0, currentTab = 'pending';
+
+const TASKS = {
+  pending: [],
+  progress: [],
+  done: []
+};
 
 // ── RENDER AGENTS ──
 function renderAgents() {
@@ -566,11 +579,11 @@ function renderVault() {
 }
 
 // ── FEED ──
-function addMsg(agentId, msg, level = 'info') {
+function addMsg(agentId, msg, level = 'info', time = null) {
   const a = AGENTS.find(x => x.id === agentId);
   if (!a) return;
   const feed = document.getElementById('feed');
-  const now = new Date().toTimeString().slice(0,5);
+  const now = time || new Date().toTimeString().slice(0,5);
   const levelLabels = { ok:'✅ ok', info:'ℹ️ info', warn:'⚠️ warn', idea:'💡 idea' };
 
   const el = document.createElement('div');
@@ -595,20 +608,74 @@ function addMsg(agentId, msg, level = 'info') {
   document.getElementById('stat-msgs').textContent = feedCount;
 }
 
+// ── LOG TO SUPABASE (real activity) ──────────────────────────
+async function logActivity(agentId, agentName, message, level = 'info') {
+  try {
+    await fetch('/api/activity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agent_id: agentId, agent_name: agentName, message, level })
+    });
+  } catch {}
+}
+
+// ── LOAD REAL ACTIVITY FROM SUPABASE ─────────────────────────
+async function loadRealActivity() {
+  try {
+    const res = await fetch('/api/activity');
+    const rows = await res.json();
+    if (Array.isArray(rows) && rows.length > 0) {
+      // Show oldest first
+      rows.reverse().forEach(r => addMsg(r.agent_id, r.message, r.level, new Date(r.created_at).toTimeString().slice(0,5)));
+    }
+  } catch {}
+}
+
+// ── SUBSCRIBE TO REALTIME NEW ENTRIES ────────────────────────
+function subscribeRealtime() {
+  _sb.channel('agent-activity')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'agent_activity' }, payload => {
+      const r = payload.new;
+      addMsg(r.agent_id, r.message, r.level, new Date(r.created_at).toTimeString().slice(0,5));
+    })
+    .subscribe();
+}
+
+// ── LOAD REAL TASKS FROM SUPABASE ────────────────────────────
+async function loadRealTasks() {
+  try {
+    const res = await fetch('/api/tasks');
+    const rows = await res.json();
+    if (Array.isArray(rows) && rows.length > 0) {
+      TASKS.pending = rows.filter(r => r.status === 'pending').map(r => ({ name: r.title, agent: r.agent_name, id: r.id }));
+      TASKS.progress = rows.filter(r => r.status === 'progress').map(r => ({ name: r.title, agent: r.agent_name, id: r.id }));
+      TASKS.done = rows.filter(r => r.status === 'done').map(r => ({ name: r.title, agent: r.agent_name, id: r.id }));
+      const doneCount = TASKS.done.length;
+      document.getElementById('stat-tasks').textContent = doneCount;
+      taskCount = doneCount;
+      renderTasks(currentTab);
+    }
+  } catch {}
+}
+
 function startFeed() {
+  // First load real data from Supabase
+  loadRealActivity();
+  subscribeRealtime();
+  loadRealTasks();
+
+  // Then continue simulating + logging to Supabase so the feed stays live
   const active = AGENTS.filter(a => a.status !== 'idle');
-  active.forEach((a, i) => setTimeout(() => addMsg(a.id, MSGS[a.id][0], 'info'), i * 400));
 
   function tick() {
     const a = active[Math.floor(Math.random() * active.length)];
     const msg = MSGS[a.id][Math.floor(Math.random() * MSGS[a.id].length)];
     const lv = a.id === 'innovator' ? 'idea' : a.id === 'tester' && Math.random() > 0.6 ? 'warn' : Math.random() > 0.7 ? 'ok' : 'info';
-    addMsg(a.id, msg, lv);
-    taskCount += Math.random() > 0.8 ? 1 : 0;
-    document.getElementById('stat-tasks').textContent = taskCount;
-    setTimeout(tick, 2000 + Math.random() * 3500);
+    // Log to Supabase — this triggers realtime in ALL connected browsers
+    logActivity(a.id, a.name, msg, lv);
+    setTimeout(tick, 8000 + Math.random() * 7000);
   }
-  setTimeout(tick, 2500);
+  setTimeout(tick, 3000);
 }
 
 // ── MODAL ──
@@ -637,6 +704,13 @@ function openModal(id) {
 
 function closeModal() { document.getElementById('modalBg').classList.remove('open'); }
 function maybeClose(e) { if (e.target === document.getElementById('modalBg')) closeModal(); }
+
+// ── TASKS ──
+function renderTasks(tab) {
+  currentTab = tab;
+  const items = TASKS[tab] || [];
+  document.getElementById('taskCount') && (document.getElementById('taskCount').textContent = items.length);
+}
 
 // ── CLOCK ──
 setInterval(() => {
