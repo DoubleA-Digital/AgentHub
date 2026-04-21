@@ -664,18 +664,6 @@ function startFeed() {
   subscribeRealtime();
   loadRealTasks();
 
-  // Then continue simulating + logging to Supabase so the feed stays live
-  const active = AGENTS.filter(a => a.status !== 'idle');
-
-  function tick() {
-    const a = active[Math.floor(Math.random() * active.length)];
-    const msg = MSGS[a.id][Math.floor(Math.random() * MSGS[a.id].length)];
-    const lv = a.id === 'innovator' ? 'idea' : a.id === 'tester' && Math.random() > 0.6 ? 'warn' : Math.random() > 0.7 ? 'ok' : 'info';
-    // Log to Supabase — this triggers realtime in ALL connected browsers
-    logActivity(a.id, a.name, msg, lv);
-    setTimeout(tick, 8000 + Math.random() * 7000);
-  }
-  setTimeout(tick, 3000);
 }
 
 // ── MODAL ──

@@ -361,7 +361,11 @@ function formatResponse(text) {
 }
 
 let msgCount = 0;
-let chatHistory = [];
+let chatHistory = JSON.parse(localStorage.getItem('chatHistory') || '[]');
+
+function saveHistory() {
+  localStorage.setItem('chatHistory', JSON.stringify(chatHistory.slice(-20)));
+}
 
 async function callGroq(message) {
   try {
@@ -403,6 +407,12 @@ function addMsg(text, isUser = false, time = null) {
 
   msgs.appendChild(el);
   msgs.scrollTop = msgs.scrollHeight;
+
+  // Persist to localStorage
+  const saved = JSON.parse(localStorage.getItem('chatMessages') || '[]');
+  saved.push({ text, isUser, time: now });
+  if (saved.length > 100) saved.splice(0, saved.length - 100);
+  localStorage.setItem('chatMessages', JSON.stringify(saved));
 }
 
 function showTyping() {
@@ -432,18 +442,17 @@ async function sendMsg() {
   input.value = '';
   addMsg(text, true);
 
-  // Add to history for context
   chatHistory.push({ role: 'user', content: text });
+  saveHistory();
 
   showTyping();
   const reply = await callGroq(text);
   removeTyping();
   addMsg(reply);
 
-  // Save reply to history
   chatHistory.push({ role: 'assistant', content: reply });
-  // Keep history short
-  if (chatHistory.length > 12) chatHistory = chatHistory.slice(-12);
+  if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+  saveHistory();
 }
 
 function quickSend(text) {
@@ -466,12 +475,18 @@ function renderSidebar() {
   }).join('');
 }
 
-// Welcome message
+// Welcome message or restore saved chat
 window.addEventListener('load', () => {
   renderSidebar();
-  setTimeout(() => {
-    addMsg(`Hey there! 👋 I'm the Agent Hub assistant — your window into what all 10 agents are doing right now.\n\nWe're currently deep in the **Clover payment integration** for Biryani Temptations! The Backend Agent is building the Supabase Edge Function, the Frontend Lead is embedding the payment form, and the Tester is running E2E tests.\n\nAsk me anything — I've got the full picture! 🚀`, false, new Date().toTimeString().slice(0,5));
-  }, 500);
+
+  const saved = JSON.parse(localStorage.getItem('chatMessages') || '[]');
+  if (saved.length > 0) {
+    saved.forEach(m => addMsg(m.text, m.isUser, m.time));
+  } else {
+    setTimeout(() => {
+      addMsg(`Hey there! 👋 I'm the Agent Hub assistant — your window into what all 10 agents are doing right now.\n\nWe're currently deep in the **Clover payment integration** for Biryani Temptations! The Backend Agent is building the Supabase Edge Function, the Frontend Lead is embedding the payment form, and the Tester is running E2E tests.\n\nAsk me anything — I've got the full picture! 🚀`, false, new Date().toTimeString().slice(0,5));
+    }, 500);
+  }
 });
 </script>
 </body>
